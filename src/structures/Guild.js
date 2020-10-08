@@ -28,6 +28,8 @@ const Snowflake = require('../util/Snowflake');
 const SystemChannelFlags = require('../util/SystemChannelFlags');
 const Util = require('../util/Util');
 
+const GuildConfig = require('./GuildConfig');
+
 /**
  * Represents a guild (or a server) on Discord.
  * <info>It's recommended to see if a guild is available before performing operations or reading data from it. You can
@@ -435,6 +437,15 @@ class Guild extends Base {
         emojis: data.emojis,
       });
     }
+
+    this.config = new GuildConfig(this, {
+        prefix: '/',
+        sDelete: false,
+        autoPublish: [],
+        logs: {
+            type: 'dunno what this should be'
+        }
+    })
   }
 
   /**
