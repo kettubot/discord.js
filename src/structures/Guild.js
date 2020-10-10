@@ -438,6 +438,10 @@ class Guild extends Base {
       });
     }
 
+    /**
+     * Interfaces with Kettu's configuration for a specific guild.
+     * @type {GuildConfig}
+     */
     this.config = new GuildConfig(this, {
         prefix: '/',
         sDelete: false,
