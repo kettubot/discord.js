@@ -128,6 +128,20 @@ class GuildConfigLogs {
      * @name GuildConfigLogs#nickname
      */
     if (data.nickname) this.nickname = this.guild.channels.cache.get(data.nickname)
+
+    /**
+     * Channel for mod logs
+     * @type {?TextChannel}
+     * @name GuildConfigLogs#mod
+     */
+    if (data.mod) this.mod = this.guild.channels.cache.get(data.mod)
+
+    /**
+     * Channel for automod logs
+     * @type {?TextChannel}
+     * @name GuildConfigLogs#automod
+     */
+    if (data.automod) this.automod = this.guild.channels.cache.get(data.automod)
   }
 
   /**
@@ -313,6 +327,30 @@ class GuildConfigLogs {
   async setNickname(channel, moderator) {
     //const modID = this.client.users.resolveID(moderator)
     this.nickname = this.client.channels.resolve(channel)
+    return this
+  }
+
+  /**
+   * Updates the channel for mod logs.
+   * @param {GuildChannelResolvable} channel The new channel
+   * @param {GuildMemberResolvable} moderator Moderator responsible for the change
+   * @returns {Promise<GuildConfigLogs>}
+   */
+  async setMod(channel, moderator) {
+    //const modID = this.client.users.resolveID(moderator)
+    this.mod = this.client.channels.resolve(channel)
+    return this
+  }
+
+  /**
+   * Updates the channel for automod logs.
+   * @param {GuildChannelResolvable} channel The new channel
+   * @param {GuildMemberResolvable} moderator Moderator responsible for the change
+   * @returns {Promise<GuildConfigLogs>}
+   */
+  async setAutomod(channel, moderator) {
+    //const modID = this.client.users.resolveID(moderator)
+    this.automod = this.client.channels.resolve(channel)
     return this
   }
 
