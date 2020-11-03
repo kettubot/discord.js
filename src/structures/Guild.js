@@ -6,6 +6,7 @@ const GuildAuditLogs = require('./GuildAuditLogs');
 const GuildPreview = require('./GuildPreview');
 const Integration = require('./Integration');
 const Invite = require('./Invite');
+const KettuGuild = require('./KettuGuild');
 const VoiceRegion = require('./VoiceRegion');
 const Webhook = require('./Webhook');
 const { Error, TypeError } = require('../errors');
@@ -27,8 +28,6 @@ const DataResolver = require('../util/DataResolver');
 const Snowflake = require('../util/Snowflake');
 const SystemChannelFlags = require('../util/SystemChannelFlags');
 const Util = require('../util/Util');
-
-const GuildConfig = require('./GuildConfig');
 
 /**
  * Represents a guild (or a server) on Discord.
@@ -103,6 +102,15 @@ class Guild extends Base {
      * @type {number}
      */
     this.shardID = data.shardID;
+
+    if (this.client.options.kettu) {
+      /**
+       * Interfaces with Kettu's configuration for a specific guild.
+       * <info>Requires {@link ClientOptions#kettu} to be enabled.</info>
+       * @type {KettuGuild}
+       */
+      this.kettu = new KettuGuild(this);
+    }
   }
 
   /**
@@ -446,19 +454,6 @@ class Guild extends Base {
         emojis: data.emojis,
       });
     }
-
-    /**
-     * Interfaces with Kettu's configuration for a specific guild.
-     * @type {GuildConfig}
-     */
-    this.config = new GuildConfig(this, {
-        prefix: '/',
-        sDelete: false,
-        autoPublish: [],
-        logs: {
-            type: 'dunno what this should be'
-        }
-    })
   }
 
   /**

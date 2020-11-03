@@ -39,6 +39,8 @@ const browser = (exports.browser = typeof window !== 'undefined');
  * @property {PresenceData} [presence] Presence data to use upon login
  * @property {WebsocketOptions} [ws] Options for the WebSocket
  * @property {HTTPOptions} [http] HTTP options
+ * @property {boolean} [kettu=false] Whether to construct an underlying Kettu client to interface with this client
+ * @property {KettuClientOptions} [kettuOptions] {@link KettuClient} options, assuming `kettu` is enabled
  */
 exports.DefaultOptions = {
   shardCount: 1,
@@ -87,6 +89,19 @@ exports.DefaultOptions = {
     api: 'https://discord.com/api',
     cdn: 'https://cdn.discordapp.com',
     invite: 'https://discord.gg',
+  },
+
+  kettu: false,
+
+  /**
+   * KettuClient options
+   * @typedef {Object} KettuClientOptions
+   * @property {number} [version=4] API version to use
+   * @property {string} [api='https://api.kettu.cc'] Base url of the API
+   */
+  kettuOptions: {
+    version: 4,
+    api: 'https://api.kettu.cc',
   },
 };
 
@@ -213,6 +228,17 @@ exports.OPCodes = {
   HEARTBEAT_ACK: 11,
 };
 
+exports.KettuOPCodes = {
+  DISPATCH: 0,
+  HEARTBEAT: 1,
+  HEARTBEAT_ACK: 2,
+  HELLO: 3,
+  IDENTIFY: 4,
+  RESUME: 5,
+  RECONNECT: 6,
+  INVALID_SESSION: 7,
+};
+
 exports.VoiceOPCodes = {
   IDENTIFY: 0,
   SELECT_PROTOCOL: 1,
@@ -290,6 +316,15 @@ exports.ShardEvents = {
   READY: 'ready',
   RESUMED: 'resumed',
   ALL_READY: 'allReady',
+};
+
+exports.KettuEvents = {
+  CLIENT_READY: 'ready',
+  ERROR: 'error',
+  WARN: 'warn',
+  DEBUG: 'debug',
+  INVALIDATED: 'invalidated',
+  RAW: 'raw',
 };
 
 /**
@@ -383,6 +418,15 @@ exports.WSEvents = keyMirror([
   'VOICE_SERVER_UPDATE',
   'WEBHOOKS_UPDATE',
 ]);
+
+/**
+ * The type of a kettu websocket message event, e.g. `GUILD_PING`. Here are the available events:
+ * * READY
+ * * RESUMED
+ * * GUILD_PING
+ * @typedef {string} KettuWSEventType
+ */
+exports.KettuWSEvents = keyMirror(['READY', 'RESUMED', 'GUILD_PING']);
 
 /**
  * The type of a message, e.g. `DEFAULT`. Here are the available types:

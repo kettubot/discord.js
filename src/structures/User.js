@@ -3,6 +3,7 @@
 const Base = require('./Base');
 const TextBasedChannel = require('./interfaces/TextBasedChannel');
 const { Error } = require('../errors');
+const KettuUser = require('../structures/KettuUser');
 const Snowflake = require('../util/Snowflake');
 const UserFlags = require('../util/UserFlags');
 
@@ -30,6 +31,15 @@ class User extends Base {
     this.system = null;
     this.locale = null;
     this.flags = null;
+
+    if (this.client.options.kettu) {
+      /**
+       * Interfaces with Kettu's configuration for a specific user.
+       * <info>Requires {@link ClientOptions#kettu} to be enabled.</info>
+       * @type {KettuUser}
+       */
+      this.kettu = new KettuUser(this);
+    }
 
     this._patch(data);
   }

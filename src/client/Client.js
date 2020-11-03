@@ -2,6 +2,7 @@
 
 const BaseClient = require('./BaseClient');
 const ActionsManager = require('./actions/ActionsManager');
+const KettuClient = require('./kettu/KettuClient');
 const ClientVoiceManager = require('./voice/ClientVoiceManager');
 const WebSocketManager = require('./websocket/WebSocketManager');
 const { Error, TypeError, RangeError } = require('../errors');
@@ -160,6 +161,14 @@ class Client extends BaseClient {
 
     if (this.options.messageSweepInterval > 0) {
       this.setInterval(this.sweepMessages.bind(this), this.options.messageSweepInterval * 1000);
+    }
+
+    /**
+     * KettuClient for this client, given the {@link ClientOptions#kettu} option is enabled
+     * @type {?KettuClient}
+     */
+    if (this.options.kettu) {
+      this.kettu = new KettuClient(this);
     }
   }
 
