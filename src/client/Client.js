@@ -163,11 +163,11 @@ class Client extends BaseClient {
       this.setInterval(this.sweepMessages.bind(this), this.options.messageSweepInterval * 1000);
     }
 
-    /**
-     * KettuClient for this client, given the {@link ClientOptions#kettu} option is enabled
-     * @type {?KettuClient}
-     */
     if (this.options.kettu) {
+      /**
+       * KettuClient for this client, given the {@link ClientOptions#kettu} option is enabled
+       * @type {?KettuClient}
+       */
       this.kettu = new KettuClient(this);
     }
   }

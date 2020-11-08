@@ -58,7 +58,7 @@ class KettuImageManager {
    * Get an image from a category
    * @param {string} category The image category
    * @param {KettuImageResolvable} image Image to retrieve
-   * @returns {Promise<?KettuImage>}
+   * @returns {Promise<KettuImage>}
    */
   async get(category, image) {
     category = category.toLowerCase();
