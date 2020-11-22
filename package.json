@@ -1,5 +1,5 @@
 {
-  "name": "discord.js",
+  "name": "@kettubot/discord.js",
   "version": "12.4.1",
   "description": "A powerful library for interacting with the Discord API",
   "main": "./src/index",
@@ -62,7 +62,7 @@
     "@types/node": "^12.12.6",
     "@types/ws": "^7.2.7",
     "cross-env": "^7.0.2",
-    "discord.js-docgen": "discordjs/docgen",
+    "discord.js-docgen": "github:discordjs/docgen",
     "dtslint": "^4.0.4",
     "eslint": "^7.11.0",
     "eslint-config-prettier": "^6.13.0",
@@ -159,5 +159,9 @@
     "trailingComma": "all",
     "endOfLine": "lf",
     "arrowParens": "avoid"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "test"
   }
 }
