@@ -25,6 +25,18 @@ class KettuClient extends EventEmitter {
      * @type {KettuImageManager}
      */
     this.images = new KettuImageManager(this);
+
+    /**
+     * Blacklist data for this kettu client
+     * @type {Array<KettuBlacklist>}
+     */
+    this.blacklist = [];
+
+    /**
+     * Secrets for this client
+     * @type {Object}
+     */
+    this.secrets = {};
   }
 
   /**

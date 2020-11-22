@@ -18,12 +18,20 @@ class KettuUser {
      */
     this.user = user;
 
+    /**
+     * Whether this user has kettu data loaded
+     * @type {boolean}
+     */
+    this.partial = true;
+
     if (!data) return;
 
     this._patch(data);
   }
 
   _patch(data) {
+    this.partial = false;
+
     if (data.flags) {
       /**
        * The kettu flags for this user
@@ -76,6 +84,20 @@ class KettuUser {
 
   // These methods are stubs, so we can ignore some eslint errors.
   /* eslint-disable no-unused-vars, require-await */
+
+  /**
+   * Fetches a user's data
+   * @param {boolean} force Whether to still fetch the user if this structure isn't partial
+   * @returns {Promise<KettuUser>}
+   */
+  async fetch(force = false) {
+    if (!this.partial && !force) return this;
+    this._patch({
+      flags: 0,
+      votes: 0,
+    });
+    return this;
+  }
 
   /**
    * Updates the user's flags
