@@ -28,7 +28,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/discordjs/discord.js.git"
+    "url": "git+https://github.com/kettubot/discord.js.git"
   },
   "keywords": [
     "discord",
@@ -38,12 +38,12 @@
     "node",
     "discordapp"
   ],
-  "author": "Amish Shah <amishshah.2k@gmail.com>",
+  "author": "eeehh <eeehhdev@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/discordjs/discord.js/issues"
+    "url": "https://github.com/kettubot/discord.js/issues"
   },
-  "homepage": "https://github.com/discordjs/discord.js#readme",
+  "homepage": "https://github.com/kettubot/discord.js#readme",
   "runkitExampleFilename": "./docs/examples/ping.js",
   "unpkg": "./webpack/discord.min.js",
   "dependencies": {
