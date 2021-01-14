@@ -29,7 +29,6 @@ class User extends Base {
     this.id = data.id;
 
     this.system = null;
-    this.locale = null;
     this.flags = null;
 
     if (this.client.options.kettu) {
@@ -55,11 +54,13 @@ class User extends Base {
       this.username = null;
     }
 
-    /**
-     * Whether or not the user is a bot
-     * @type {boolean}
-     */
-    this.bot = Boolean(data.bot);
+    if ('bot' in data || typeof this.bot !== 'boolean') {
+      /**
+       * Whether or not the user is a bot
+       * @type {boolean}
+       */
+      this.bot = Boolean(data.bot);
+    }
 
     if ('discriminator' in data) {
       /**
@@ -87,14 +88,6 @@ class User extends Base {
        * @type {?boolean}
        */
       this.system = Boolean(data.system);
-    }
-
-    if ('locale' in data) {
-      /**
-       * The locale of the user's client (ISO 639-1)
-       * @type {?string}
-       */
-      this.locale = data.locale;
     }
 
     if ('public_flags' in data) {
@@ -295,7 +288,7 @@ class User extends Base {
 
   /**
    * Fetches this user's flags.
-   * @param {boolean} [force=false] Whether to skip the cache check and request the AP
+   * @param {boolean} [force=false] Whether to skip the cache check and request the API
    * @returns {Promise<UserFlags>}
    */
   async fetchFlags(force = false) {
@@ -307,7 +300,7 @@ class User extends Base {
 
   /**
    * Fetches this user.
-   * @param {boolean} [force=false] Whether to skip the cache check and request the AP
+   * @param {boolean} [force=false] Whether to skip the cache check and request the API
    * @returns {Promise<User>}
    */
   fetch(force = false) {
