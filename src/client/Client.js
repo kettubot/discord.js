@@ -1,6 +1,7 @@
 'use strict';
 
 const BaseClient = require('./BaseClient');
+const InteractionClient = require('./InteractionClient');
 const ActionsManager = require('./actions/ActionsManager');
 const KettuClient = require('./kettu/KettuClient');
 const ClientVoiceManager = require('./voice/ClientVoiceManager');
@@ -102,6 +103,12 @@ class Client extends BaseClient {
     this.shard = process.env.SHARDING_MANAGER
       ? ShardClientUtil.singleton(this, process.env.SHARDING_MANAGER_MODE)
       : null;
+
+    /**
+     * The interaction client.
+     * @type {InteractionClient}
+     */
+    this.interactionClient = new InteractionClient(options, this);
 
     /**
      * All of the {@link User} objects that have been cached at any point, mapped by their IDs
