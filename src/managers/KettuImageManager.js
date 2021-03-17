@@ -60,9 +60,6 @@ class KettuImageManager {
     category = category.toLowerCase();
     if (!IMAGE_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
 
-    // This is still just a stub, but I couldn't think of any other good way to implement it
-    // Hopefully this endpoint will be implemented by the time it's needed as a stub
-
     const data = await this.client.api.images[category](image).get();
     if (data.code) return null;
 
