@@ -2,21 +2,7 @@
 
 const KettuImage = require('../structures/KettuImage');
 
-const IMAGE_CATEGORIES = [
-  'bap',
-  'bellyrub',
-  'boop',
-  'cookie',
-  'hug',
-  'kiss',
-  'lick',
-  'nom',
-  'nuzzle',
-  'pat',
-  'pounce',
-  'snuggle',
-  'zap',
-];
+const IMAGE_CATEGORIES = ['boop', 'hug', 'kiss', 'lick', 'nom', 'nuzzle', 'pat', 'pounce', 'snuggle'];
 
 /**
  * Manager for interfacing with Kettu's images
