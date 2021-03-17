@@ -43,6 +43,14 @@ class KettuImage {
       this.source = data.source;
     }
 
+    if (data.artist) {
+      /**
+       * The artist's image page
+       * @type{?string}
+       */
+      this.artist = data.artist;
+    }
+
     if (data.notes) {
       /**
        * Notes for this image
@@ -50,17 +58,26 @@ class KettuImage {
        */
       this.notes = data.notes;
     }
-  }
 
-  // These methods are stubs, so we can ignore some eslint errors.
-  /* eslint-disable no-unused-vars, require-await */
+    if (data.tags) {
+      /**
+       * Tags for this image
+       * @type {Array<string>}
+       */
+      this.tags = data.tags;
+    }
+
+    /** */
+  }
 
   /**
    * Data representing a Kettu image
    * @typedef {Object} KettuImageData
    * @property {string} direct Direct URL for the image
    * @property {?string} source Source URL for the image
+   * @property {?string} artist Artist home page
    * @property {?string} notes Notes for the image
+   * @property {?Array<string>} tags Tags for the image
    */
 
   /**
@@ -73,23 +90,8 @@ class KettuImage {
    *   .then(updated => console.log(`Edited role source to ${updated.source}`))
    *   .catch(console.error);
    */
-  async edit(data) {
-    if (data.direct) {
-      if (typeof data.direct !== 'string') throw new Error('INVALID_DATA_DIRECT');
-      this.direct = data.direct;
-    }
-
-    if (data.source) {
-      if (typeof data.source !== 'string' && data.source !== null) throw new Error('INVALID_DATA_SOURCE');
-      this.source = data.source;
-    }
-
-    if (data.notes) {
-      if (typeof data.notes !== 'string' && data.notes !== null) throw new Error('INVALID_DATA_NOTES');
-      this.notes = data.notes;
-    }
-
-    return this;
+  edit(data) {
+    return this.manager.client.api.images[this.category](this.id).patch(data);
   }
 }
 

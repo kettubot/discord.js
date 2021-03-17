@@ -91,14 +91,18 @@ exports.DefaultOptions = {
    * @typedef {Object} KettuClientOptions
    * @property {number} [version=4] API version to use
    * @property {string} [api='https://api.kettu.cc'] Base url of the API
+   * @property {KettuIntents} [intents=127] Required intents
    */
   kettuOptions: {
     version: 4,
     api: 'https://api.kettu.cc',
+    intents: 127,
   },
 };
 
 exports.UserAgent = `DiscordBot (${Package.homepage.split('#')[0]}, ${Package.version}) Node.js/${process.version}`;
+
+exports.KettuUserAgent = `Kettu (blah, blah) Node.js/${process.version}`;
 
 exports.WSCodes = {
   1000: 'WS_CLOSE_REQUESTED',

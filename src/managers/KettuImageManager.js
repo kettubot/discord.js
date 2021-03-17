@@ -1,6 +1,5 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const KettuImage = require('../structures/KettuImage');
 
 const IMAGE_CATEGORIES = [
@@ -44,9 +43,6 @@ class KettuImageManager {
     });
   }
 
-  // These methods are stubs, so we can ignore some eslint errors.
-  /* eslint-disable no-unused-vars, require-await */
-
   /**
    * Data that can be resolved to a Kettu image in a category. This can be:
    * * An image id
@@ -67,7 +63,7 @@ class KettuImageManager {
     // This is still just a stub, but I couldn't think of any other good way to implement it
     // Hopefully this endpoint will be implemented by the time it's needed as a stub
 
-    const data = await fetch(`https://api.kettu.cc/images/${category}/${image}`).then(res => res.json());
+    const data = await this.client.api.images[category](image).get();
     if (data.code) return null;
 
     const exisiting_image = this.cache.find(cache_img => cache_img.id === data.id && cache_img.category === category);
@@ -97,7 +93,9 @@ class KettuImageManager {
     // Stub ID
     data.id = Math.round(Math.random() * 1000);
 
-    return new KettuImage(this, category, data);
+    const image = await this.client.api.images[category].post(data);
+
+    return new KettuImage(this, category, image);
   }
 }
 
