@@ -1,7 +1,9 @@
 'use strict';
 
 const EventEmitter = require('events');
+const KettuWebSocket = require('./KettuWebSocket');
 const KettuImageManager = require('../../managers/KettuImageManager');
+const KettuRESTManager = require('../../rest/kettu/KettuRESTManager');
 const { KettuEvents } = require('../../util/Constants');
 
 /**
@@ -21,6 +23,12 @@ class KettuClient extends EventEmitter {
     Object.defineProperty(this, 'client', { value: client });
 
     /**
+     * WebSocket for this kettu client
+     * @type {KettuWebSocket}
+     */
+    this.ws = new KettuWebSocket(this);
+
+    /**
      * Image manager for this kettu client
      * @type {KettuImageManager}
      */
@@ -33,10 +41,42 @@ class KettuClient extends EventEmitter {
     this.blacklist = [];
 
     /**
+     * Token
+     * @type {?string}
+     */
+    this.token = null;
+
+    /**
      * Secrets for this client
      * @type {Object}
      */
     this.secrets = {};
+
+    /**
+     * Kettu's REST manager of the client
+     * @type {KettuRESTManager}
+     * @private
+     */
+    this.rest = new KettuRESTManager(this);
+  }
+
+  /**
+   * The kAPI shortcut
+   * @type {Object}
+   * @readonly
+   * @private
+   */
+  get api() {
+    return this.rest.api;
+  }
+
+  /**
+   * This Kettu Client's options
+   * @type {Object}
+   * @readonly
+   */
+  get options() {
+    return this.client.options.kettuOptions;
   }
 
   /**
@@ -48,7 +88,7 @@ class KettuClient extends EventEmitter {
    */
   async login(token) {
     if (!token || typeof token !== 'string') throw new Error('TOKEN_INVALID');
-    this.token = token = token.replace(/^(Bot|Bearer)\s*/i, '');
+    this.token = token.replace(/^(Bot|Bearer)\s*/i, '');
     this.emit(
       KettuEvents.DEBUG,
       `Provided token: ${token
@@ -57,11 +97,12 @@ class KettuClient extends EventEmitter {
         .join('.')}`,
     );
 
-    this.emit(KettuEvents.DEBUG, 'Preparing to connect to the gateway...');
-    this.emit(KettuEvents.DEBUG, 'Pretended to connect, starting Discord client...');
+    this.emit(KettuEvents.DEBUG, 'Preparing to connect to kAPI gateway...');
+    const { discord_token } = await this.ws.connect();
+    this.emit(KettuEvents.DEBUG, 'Connected to kAPI, starting Discord client...');
 
     try {
-      await this.client.login(token);
+      await this.client.login(discord_token);
       return this.token;
     } catch (error) {
       this.destroy();
