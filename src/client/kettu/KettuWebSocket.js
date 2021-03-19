@@ -133,7 +133,7 @@ class KettuWebSocket extends EventEmitter {
   /**
    * Emits a debug message.
    * @param {string} message The debug message
-   * @param {?WebSocketShard} [shard] The shard that emitted this message, if any
+   * @param {?KettuWebSocket} [shard] The shard that emitted this message, if any
    * @private
    */
   debug(message) {
@@ -314,7 +314,7 @@ class KettuWebSocket extends EventEmitter {
     /**
      * Emitted when a shard's WebSocket closes.
      * @private
-     * @event WebSocketShard#close
+     * @event KettuWebSocket#close
      * @param {CloseEvent} event The received event
      */
     this.emit(ShardEvents.CLOSE, event);
@@ -335,7 +335,7 @@ class KettuWebSocket extends EventEmitter {
       case KettuWSEvents.READY:
         /**
          * Emitted when the shard receives the READY payload and is fully ready
-         * @event WebSocketShard#ready
+         * @event KettuWebSocket#ready
          */
         this.discord_token = packet.d.user.token;
 
@@ -358,7 +358,7 @@ class KettuWebSocket extends EventEmitter {
       case KettuWSEvents.RESUMED: {
         /**
          * Emitted when the shard resumes successfully
-         * @event WebSocketShard#resumed
+         * @event KettuWebSocket#resumed
          */
         this.emit(ShardEvents.RESUMED);
 
@@ -672,7 +672,7 @@ class KettuWebSocket extends EventEmitter {
     /**
      * Emitted when a shard is destroyed, but no WebSocket connection was present.
      * @private
-     * @event WebSocketShard#destroyed
+     * @event KettuWebSocket#destroyed
      */
     this.emit(ShardEvents.DESTROYED);
   }
