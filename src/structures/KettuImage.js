@@ -46,7 +46,7 @@ class KettuImage {
     if (data.artist) {
       /**
        * The artist's image page
-       * @type{?string}
+       * @type {?string}
        */
       this.artist = data.artist;
     }
