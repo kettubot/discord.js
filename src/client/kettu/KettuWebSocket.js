@@ -99,7 +99,7 @@ class KettuWebSocket extends EventEmitter {
 
     /**
      * The HELLO timeout
-     * @name WebSocketShard#helloTimeout
+     * @name KettuWebSocket#helloTimeout
      * @type {?NodeJS.Timeout}
      * @private
      */
@@ -107,7 +107,7 @@ class KettuWebSocket extends EventEmitter {
 
     /**
      * If the manager attached its event handlers on the shard
-     * @name WebSocketShard#eventsAttached
+     * @name KettuWebSocket#eventsAttached
      * @type {boolean}
      * @private
      */
@@ -115,7 +115,7 @@ class KettuWebSocket extends EventEmitter {
 
     /**
      * The ready timeout
-     * @name WebSocketShard#readyTimeout
+     * @name KettuWebSocket#readyTimeout
      * @type {?NodeJS.Timeout}
      * @private
      */
@@ -123,7 +123,7 @@ class KettuWebSocket extends EventEmitter {
 
     /**
      * Time when the WebSocket connection was opened
-     * @name WebSocketShard#connectedAt
+     * @name KettuWebSocket#connectedAt
      * @type {number}
      * @private
      */
