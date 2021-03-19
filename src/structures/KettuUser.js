@@ -40,6 +40,12 @@ class KettuUser {
       this.flags = new KettuUserFlags(data.flags);
     }
 
+    /**
+     * The kettu permissions for this user
+     * @tyoe {integer}
+     */
+    this.perms = data.perms;
+
     if (data.votes) {
       /**
        * The number of times this user has voted for Kettu
@@ -92,10 +98,8 @@ class KettuUser {
    */
   async fetch(force = false) {
     if (!this.partial && !force) return this;
-    this._patch({
-      flags: 0,
-      votes: 0,
-    });
+    const data = await this.user.client.kettu.api.users(this.user.id).get();
+    this._patch(data);
     return this;
   }
 

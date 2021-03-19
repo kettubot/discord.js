@@ -35,8 +35,8 @@ class KettuClient extends EventEmitter {
     this.images = new KettuImageManager(this);
 
     /**
-     * Blacklist data for this kettu client
-     * @type {Array<KettuBlacklist>}
+     * Blacklisted users for this Kettu client
+     * @type {Array<Snowflake>}
      */
     this.blacklist = [];
 
@@ -45,6 +45,12 @@ class KettuClient extends EventEmitter {
      * @type {?string}
      */
     this.token = null;
+
+    /**
+     * Default prefix for this client
+     * @type {?string}
+     */
+    this.defaultPrefix = null;
 
     /**
      * Secrets for this client
@@ -98,7 +104,7 @@ class KettuClient extends EventEmitter {
     );
 
     this.emit(KettuEvents.DEBUG, 'Preparing to connect to kAPI gateway...');
-    const { discord_token } = await this.ws.connect();
+    const discord_token = await this.ws.connect();
     this.emit(KettuEvents.DEBUG, 'Connected to kAPI, starting Discord client...');
 
     try {

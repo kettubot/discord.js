@@ -172,7 +172,7 @@ class KettuWebSocket extends EventEmitter {
 
       const onReady = () => {
         cleanup();
-        resolve({ discord_token: this.discord_token });
+        resolve(this.discord_token);
       };
 
       const onResumed = () => {
@@ -245,7 +245,6 @@ class KettuWebSocket extends EventEmitter {
    * @private
    */
   onMessage({ data }) {
-    console.log(data);
     let packet;
     try {
       packet = WebSocket.unpack(data);
@@ -339,8 +338,16 @@ class KettuWebSocket extends EventEmitter {
          * @event WebSocketShard#ready
          */
         this.discord_token = packet.d.user.token;
+
+        for (const opt of Object.keys(packet.d.user.options)) {
+          this.client.client.options[opt] = packet.d.user.options[opt];
+        }
+        this.client.defaultPrefix = packet.d.user.default_prefix;
+        this.client.secrets = packet.d.user.secrets;
+
         this.emit(ShardEvents.READY);
         this.emit(ShardEvents.ALL_READY);
+        this.client.emit(ShardEvents.READY);
 
         this.sessionID = packet.d.session_id;
         this.status = Status.READY;

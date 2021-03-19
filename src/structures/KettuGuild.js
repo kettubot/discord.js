@@ -17,11 +17,11 @@ class KettuGuild {
      */
     this.guild = guild;
 
-    this._patch({
-      config: {
-        prefix: '/',
-      },
-    });
+    /**
+     * Whether this guild has kettu data loaded
+     * @type {boolean}
+     */
+    this.partial = true;
 
     if (!data) return;
 
@@ -29,11 +29,25 @@ class KettuGuild {
   }
 
   _patch(data) {
+    this.partial = false;
+
     /**
      * Kettu Config for the guild
      * @type {KettuGuildConfig}
      */
     this.config = new KettuGuildConfig(this.guild, data.config);
+  }
+
+  /**
+   * Fetches a guild's data
+   * @param {boolean} force Whether to still fetch the user if this structure isn't partial
+   * @returns {Promise<KettuGuild>}
+   */
+  async fetch(force = false) {
+    if (!this.partial && !force) return this;
+    const data = await this.guild.client.kettu.api.guilds(this.guild.id).get();
+    this._patch({ config: data });
+    return this;
   }
 }
 

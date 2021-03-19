@@ -473,9 +473,10 @@ class Client extends BaseClient {
    * @private
    */
   _validateOptions(options = this.options) {
-    if (typeof options.intents === 'undefined') {
+    // Modified: intents are added later for kettu clients
+    if (typeof options.intents === 'undefined' && !options.kettu) {
       throw new TypeError('CLIENT_MISSING_INTENTS');
-    } else {
+    } else if (!options.kettu) {
       options.intents = Intents.resolve(options.intents);
     }
     if (typeof options.shardCount !== 'number' || isNaN(options.shardCount) || options.shardCount < 1) {
