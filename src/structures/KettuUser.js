@@ -42,7 +42,7 @@ class KettuUser {
 
     /**
      * The kettu permissions for this user
-     * @tyoe {integer}
+     * @type {integer}
      */
     this.perms = data.perms;
 
