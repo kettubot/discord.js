@@ -268,7 +268,7 @@ class KettuWebSocket extends EventEmitter {
 
     /**
      * Emitted whenever a shard's WebSocket encounters a connection error.
-     * @event Client#shardError
+     * @event KettuClient#shardError
      * @param {Error} error The encountered error
      * @param {number} shardID The shard that encountered this error
      */
