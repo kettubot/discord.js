@@ -36,6 +36,12 @@ class KettuGuild {
      * @type {KettuGuildConfig}
      */
     this.config = new KettuGuildConfig(this.guild, data.config);
+
+    /**
+     * Whether the guild is premium or not
+     * @type {boolean}
+     */
+    this.premium = Boolean(data.premium);
   }
 
   /**
@@ -46,7 +52,7 @@ class KettuGuild {
   async fetch(force = false) {
     if (!this.partial && !force) return this;
     const data = await this.guild.client.kettu.api.guilds(this.guild.id).get();
-    this._patch({ config: data });
+    this._patch(data);
     return this;
   }
 }

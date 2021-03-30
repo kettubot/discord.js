@@ -1,7 +1,7 @@
 'use strict';
 
 const MOD_ROLES = ['mute', 'trusted', 'bypass', 'helper', 'mod', 'admin'];
-const MOD_ACTIONS = ['lockchannel', 'lockserver', 'raidmode', 'purge', 'deleteCase', 'editCase'];
+const MOD_ACTIONS = ['lockchannel', 'lockcategory', 'lockserver', 'raidmode', 'purge', 'deleteCase', 'editCase'];
 const MOD_ACTION_TYPES = ['log', 'case'];
 const MOD_CONFIRM_LEVELS = ['none', 'mass', 'all'];
 
@@ -59,6 +59,7 @@ class KettuGuildConfigMod {
      * Action logging configuration for various moderation actions
      * @typedef {Object} KettuGuildConfigModActions
      * @property {?KettuGuildConfigModActionType} lockchannel
+     * @property {?KettuGuildConfigModActionType} lockcategory
      * @property {?KettuGuildConfigModActionType} lockserver
      * @property {?KettuGuildConfigModActionType} raidmode
      * @property {?KettuGuildConfigModActionType} purge
