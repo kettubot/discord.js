@@ -47,11 +47,10 @@ class KettuImageManager {
     category = category.toLowerCase();
     if (!IMAGE_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
 
-    const exisiting_image = this.cache.find(cache_img => cache_img.id === data.id && cache_img.category === category);
+    const exisiting_image = this.cache.find(cache_img => cache_img.id === image && cache_img.category === category);
     if (!force && image !== 'RANDOM') return exisiting_image;
 
     const data = await this.client.api.images[category](image).get();
-    if (data.code) return null;
 
     if (exisiting_image) {
       exisiting_image._patch(data);
