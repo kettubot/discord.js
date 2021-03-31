@@ -84,8 +84,8 @@ class KettuGuildConfig {
   async setPrefix(prefix, moderator) {
     if (prefix.includes(' ') || prefix.length > 32) throw new Error('INVALID_PREFIX');
 
-    const newdata = await this.guild.client.kettu.api.guilds(this.guild.id).patch({ prefix: prefix });
-    this._patch(newdata);
+    const newdata = await this.guild.client.kettu.api.guilds(this.guild.id).patch({ data: { prefix: prefix } });
+    this.guild.kettu._patch(newdata);
 
     return this;
   }
