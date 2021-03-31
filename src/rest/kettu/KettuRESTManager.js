@@ -1,7 +1,7 @@
 'use strict';
 
-const routeBuilder = require('./APIRouter');
 const KettuAPIRequest = require('./KettuAPIRequest');
+const routeBuilder = require('./KettuAPIRouter');
 const DiscordAPIError = require('../DiscordAPIError');
 const HTTPError = require('../HTTPError');
 
