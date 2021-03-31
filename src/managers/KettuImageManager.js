@@ -40,16 +40,18 @@ class KettuImageManager {
    * Get an image from a category
    * @param {string} category The image category
    * @param {KettuImageResolvable} image Image to retrieve
+   * @param {boolean} force Whether to force fetch (implied if category is 'RANDOM')
    * @returns {Promise<KettuImage>}
    */
-  async get(category, image) {
+  async fetch(category, image, force = false) {
     category = category.toLowerCase();
     if (!IMAGE_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
 
+    const exisiting_image = this.cache.find(cache_img => cache_img.id === data.id && cache_img.category === category);
+    if (!force && image !== 'RANDOM') return exisiting_image;
+
     const data = await this.client.api.images[category](image).get();
     if (data.code) return null;
-
-    const exisiting_image = this.cache.find(cache_img => cache_img.id === data.id && cache_img.category === category);
 
     if (exisiting_image) {
       exisiting_image._patch(data);
