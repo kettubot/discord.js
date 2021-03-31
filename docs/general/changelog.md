@@ -6,6 +6,7 @@ Going into dot-point form, for more specific changelogs.
 
 - Updated `KettuGuild` and `KettuGuildConfig` structures for consistency with new kAPI documentation.
 - Added `KettuGuildConfigRoles` and `KettuGuildConfigSocial`.
+- Added `KettuUserPerms` for `KettuUser.perms`.
 - Renamed `APIRouter.js` to `KettuAPIRouter.js`.
 - Renamed `KettuImageManager.get` to `KettuImageManager.fetch` and support the `force` parameter.
 - Implemented basic functionality for updating prefixes.

@@ -1,6 +1,7 @@
 'use strict';
 
 const KettuUserFlags = require('../util/KettuUserFlags');
+const KettuUserPerms = require('../util/KettuUserPerms');
 const KettuUserSocialBlacklist = require('../util/KettuUserSocialBlacklist');
 
 /**
@@ -44,7 +45,7 @@ class KettuUser {
      * The kettu permissions for this user
      * @type {integer}
      */
-    this.perms = data.perms;
+    this.perms = new KettuUserPerms(data.perms);
 
     if (data.votes) {
       /**
