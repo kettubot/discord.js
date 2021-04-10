@@ -5,12 +5,12 @@ const BitField = require('./BitField');
  * Data structure that makes it easy to interact with a {@link KettuUser#flags} bitfield.
  * @extends {BitField}
  */
-class KettuUserSocialBlacklist extends BitField {}
+class KettuUserSocialPrefs extends BitField {}
 
 /**
- * @name KettuUserSocialBlacklist
+ * @name KettuUserSocialPrefs
  * @kind constructor
- * @memberof KettuUserSocialBlacklist
+ * @memberof KettuUserSocialPrefs
  * @param {BitFieldResolvable} [bits=0] Bit(s) to read from
  */
 
@@ -31,7 +31,7 @@ class KettuUserSocialBlacklist extends BitField {}
  * * `ZAP`
  * @type {Object}
  */
-KettuUserSocialBlacklist.FLAGS = {
+KettuUserSocialPrefs.FLAGS = {
   BAP: 1 << 0,
   BELLYRUB: 1 << 1,
   BOOP: 1 << 2,
@@ -47,4 +47,4 @@ KettuUserSocialBlacklist.FLAGS = {
   ZAP: 1 << 12,
 };
 
-module.exports = KettuUserSocialBlacklist;
+module.exports = KettuUserSocialPrefs;

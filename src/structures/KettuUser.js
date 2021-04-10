@@ -1,8 +1,9 @@
 'use strict';
 
+const KettuUserAnimalPrefs = require('../util/KettuUserAnimalPrefs');
 const KettuUserFlags = require('../util/KettuUserFlags');
 const KettuUserPerms = require('../util/KettuUserPerms');
-const KettuUserSocialBlacklist = require('../util/KettuUserSocialBlacklist');
+const KettuUserSocialPrefs = require('../util/KettuUserSocialPrefs');
 
 /**
  * Represents a Discord User in Kettu's context.
@@ -83,8 +84,14 @@ class KettuUser {
     if (data.settings) {
       this.settings.voteRM = Boolean(data.settings.voteRM);
 
-      if (data.settings.social_blacklist) {
-        this.settings.social = new KettuUserSocialBlacklist(data.settings.social_blacklist);
+      this.settings.social = Boolean(data.settings.social);
+      if (data.settings.socialPrefs) {
+        this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs);
+      }
+
+      this.settings.animal = Boolean(data.settings.animal);
+      if (data.settings.animalPrefs) {
+        this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs);
       }
     }
   }
