@@ -72,7 +72,10 @@ class KettuUser {
     /**
      * A user's Kettu settings
      * @typedef {Object} KettuUserSettings
-     * @property {?KettuUserSocialBlacklist} social Social commands to ignore
+     * @property {boolean} social Global user toggle for social commands
+     * @property {?KettuUserSocialPrefs} socialPrefs Social commands to ignore
+     * @property {boolean} animal Global user toggle for animal commands
+     * @property {?KettuUserAnimalPrefs} animalPrefs Animal commands to ignore
      * @property {boolean} voteRM Whether this user has enabled vote reminders
      */
 
@@ -86,12 +89,12 @@ class KettuUser {
 
       this.settings.social = Boolean(data.settings.social);
       if (data.settings.socialPrefs) {
-        this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs);
+        this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs || 0);
       }
 
       this.settings.animal = Boolean(data.settings.animal);
       if (data.settings.animalPrefs) {
-        this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs);
+        this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs || 0);
       }
     }
   }
