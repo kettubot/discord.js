@@ -230,8 +230,10 @@ exports.KettuOPCodes = {
   HELLO: 3,
   IDENTIFY: 4,
   RESUME: 5,
-  RECONNECT: 6,
-  INVALID_SESSION: 7,
+  INVALID_SESSION: 6,
+  RECONNECT: 7,
+  REQUEST_GUILDS: 9,
+  RETRIEVE_GUILDS: 10,
 };
 
 exports.VoiceOPCodes = {
