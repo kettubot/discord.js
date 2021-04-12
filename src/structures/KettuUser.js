@@ -143,8 +143,8 @@ class KettuUser {
    * @returns {Promise<KettuUser>}
    * @example
    * // Disable a user's bap commands
-   * const newflags = user.kettu.settings.social_blacklist.add('BAP')
-   * await user.kettu.setSettings({ social: newflags })
+   * const newflags = user.kettu.settings.socialPrefs.add('BAP')
+   * await user.kettu.setSettings({ socialPrefs: newflags })
    */
 
   async setSettings(settings) {
