@@ -34,40 +34,38 @@ class KettuUser {
   _patch(data) {
     this.partial = false;
 
-    if (data.flags) {
-      /**
-       * The kettu flags for this user
-       * @type {?KettuUserFlags}
-       */
-      this.flags = new KettuUserFlags(data.flags);
-    }
+    /**
+     * The kettu flags for this user
+     * @type {KettuUserFlags}
+     */
+    this.flags = new KettuUserFlags(data.flags || 0);
 
     /**
      * The kettu permissions for this user
      * @type {integer}
      */
-    this.perms = new KettuUserPerms(data.perms);
+    this.perms = new KettuUserPerms(data.perms || 0);
 
-    if (data.votes) {
-      /**
-       * The number of times this user has voted for Kettu
-       * @type {number}
-       */
-      this.votes = data.votes;
-    }
+    /**
+     * The number of times this user has voted for Kettu
+     * @type {number}
+     */
+    this.votes = data.votes || 0;
 
     /**
      * A user's Kettu profile
      * @typedef {Object} KettuUserProfile
      * @property {?string} bio Text bio
      * @property {?ColorResolvable} color Profile color
+     * @property {number} pronouns The user's preferred pronouns
+     * @property {?string} timezone IANA timezone string
      */
 
     /**
      * This user's Kettu profile information
      * @type {KettuUserProfile}
      */
-    this.profile = data.profile || {};
+    this.profile = data.profile;
 
     /**
      * A user's Kettu settings
@@ -84,23 +82,19 @@ class KettuUser {
      * @type {KettuUserSettings}
      */
     this.settings = {};
-    if (data.settings) {
-      this.settings.voteRM = Boolean(data.settings.voteRM);
 
-      this.settings.social = Boolean(data.settings.social);
-      if (data.settings.socialPrefs) {
-        this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs || 0);
-      }
+    this.settings.voteRM = Boolean(data.settings.voteRM);
 
-      this.settings.animal = Boolean(data.settings.animal);
-      if (data.settings.animalPrefs) {
-        this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs || 0);
-      }
+    this.settings.social = Boolean(data.settings.social);
+    if (data.settings.socialPrefs) {
+      this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs || 0);
+    }
+
+    this.settings.animal = Boolean(data.settings.animal);
+    if (data.settings.animalPrefs) {
+      this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs || 0);
     }
   }
-
-  // These methods are stubs, so we can ignore some eslint errors.
-  /* eslint-disable no-unused-vars, require-await */
 
   /**
    * Fetches a user's data
@@ -126,7 +120,8 @@ class KettuUser {
 
   async setFlags(flags) {
     if (!(flags instanceof KettuUserFlags)) throw new Error('INVALID_FLAGS');
-    this.flags = flags;
+    const data = await this.user.client.kettu.api.users(this.user.id).patch({ data: { flags: flags.bitfield } });
+    this._patch(data);
     return this;
   }
 
@@ -137,7 +132,8 @@ class KettuUser {
    */
 
   async setProfile(profile) {
-    this.profile = profile;
+    const data = await this.user.client.kettu.api.users(this.user.id).patch({ data: { profile: profile } });
+    this._patch(data);
     return this;
   }
 
@@ -152,7 +148,10 @@ class KettuUser {
    */
 
   async setSettings(settings) {
-    this.settings = settings;
+    if (settings.socialPrefs) settings.socialPrefs = settings.socialPrefs.bitfield;
+    if (settings.animalPrefs) settings.animalPrefs = settings.animalPrefs.bitfield;
+    const data = await this.user.client.kettu.api.users(this.user.id).patch({ data: { settings: settings } });
+    this._patch(data);
     return this;
   }
 }
