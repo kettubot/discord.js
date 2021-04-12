@@ -403,7 +403,8 @@ class KettuWebSocket extends EventEmitter {
         this.ackHeartbeat();
         break;
       case KettuOPCodes.HEARTBEAT:
-        this.sendHeartbeat('HeartbeatRequest', true);
+        if (packet.a) this.ackHeartbeat();
+        else this.sendHeartbeat('HeartbeatRequest', true);
         break;
       default:
         if (PacketHandlers[packet.t]) PacketHandlers[packet.t](this.client, packet);
