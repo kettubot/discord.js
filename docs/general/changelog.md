@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.0.0-alpha.6
+
+- `KettuUser`: integrate methods with kAPI, update some method examples
+- `KettuWebSocket`: implement new heartbeat ACKs, add Retrieve Guilds logic
+
+## 13.0.0-alpha.5
+
+- `KettuUser`: renamed `social` to `socialPrefs`, added `social`, `animal` and `animalPrefs`
+
 ## 13.0.0-alpha.4
 
 Going into dot-point form, for more specific changelogs.
