@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.0.0-alpha.7
+
+- `KettuUser#settings`: properties `social` and `animal` renamed to `socialDisabled` and `animalDisabled` respectively
+- `WebSocket`: allows packing of BigInts.
+
 ## 13.0.0-alpha.6
 
 - `KettuUser`: integrate methods with kAPI, update some method examples
