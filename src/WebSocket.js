@@ -13,7 +13,9 @@ const ab = new TextDecoder();
 
 exports.encoding = erlpack ? 'etf' : 'json';
 
-exports.pack = erlpack ? erlpack.pack : JSON.stringify;
+exports.pack = erlpack
+  ? erlpack.pack
+  : data => JSON.stringify(data, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
 
 exports.unpack = (data, type) => {
   if (exports.encoding === 'json' || type === 'json') {
