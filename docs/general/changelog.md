@@ -1,5 +1,9 @@
 # Changelog
 
+## 13.0.0-alpha.8
+
+- `KettuUser#settings`: fix a bug where my brain actually doesn't work
+
 ## 13.0.0-alpha.7
 
 - `KettuUser#settings`: properties `social` and `animal` renamed to `socialDisabled` and `animalDisabled` respectively
