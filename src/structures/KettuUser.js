@@ -85,12 +85,12 @@ class KettuUser {
 
     this.settings.voteRM = Boolean(data.settings.voteRM);
 
-    this.settings.social = Boolean(data.settings.social);
+    this.settings.socialDisabled = Boolean(data.settings.socialDisabled);
     if (data.settings.socialPrefs) {
       this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs ?? 0);
     }
 
-    this.settings.animal = Boolean(data.settings.animal);
+    this.settings.animalDisabled = Boolean(data.settings.animalDisabled);
     if (data.settings.animalPrefs) {
       this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs ?? 0);
     }
