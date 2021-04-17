@@ -119,6 +119,11 @@ class KettuImage {
    * @param {Array<Snowflake>} dislikes Users to add dislikes for
    * @param {Array<KettuImageFlagData>} flags Flags to add
    * @returns {Promise<KettuImageFeedbackResponse>}
+   * @example
+   * // Add a dislike and a flag for the message author
+   * const result = await image.addFeedback([], [msg.author.id], [{ user: msg.author.id, reason: 'its bad' }])
+   * console.log(`Dislikes: added ${result.dislikes.added}, skipped ${result.dislikes.skipped}`)
+   * console.log(`Flags: added ${result.flags.added}, skipped ${result.flags.skipped}`)
    */
   addFeedback(likes = [], dislikes = [], flags = []) {
     return this.manager.client.api.images[this.category](this.id).feedback.patch({ data: { likes, dislikes, flags } });
