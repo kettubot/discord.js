@@ -63,6 +63,22 @@ class KettuImageManager {
   }
 
   /**
+   * Get all images from a category
+   * @param {string} category The image category
+   * @returns {Promise<Array<KettuImage>>}
+   */
+  async fetchAll(category) {
+    category = category.toLowerCase();
+    if (!IMAGE_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
+
+    const data = await this.client.api.images[category].get();
+
+    const images = data.map(d => new KettuImage(this, category, d));
+    this.cache.push(...images);
+    return images;
+  }
+
+  /**
    * Create a new Kettu image
    * @param {string} category The image category
    * @param {KettuImageData} data Data for the new image
