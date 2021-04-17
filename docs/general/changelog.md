@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.0.0-alpha.9
+
+- `KettuImageManager#fetchAll` now fetches all images from a category
+- `KettuImage#addFeedback` allows feedback to be added to a specific image
+
 ## 13.0.0-alpha.8
 
 - `KettuUser#settings`: fix a bug where my brain actually doesn't work
