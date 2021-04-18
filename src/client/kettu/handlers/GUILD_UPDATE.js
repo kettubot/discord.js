@@ -3,8 +3,7 @@
 /**
  * Emitted whenever a kettu guild is updated.
  * @event KettuClient#guildUpdate
- * @param {Guild} oldGuild The old data for the guild
- * @param {Guild} newGuild The new data for the guild
+ * @param {KettuGuild} guild The new kettu guild data
  */
 
 module.exports = (kettu, packet) => {
@@ -12,9 +11,7 @@ module.exports = (kettu, packet) => {
   if (!guild) return;
 
   packet.d.config = packet.d.configs[kettu.client.user.id];
+  guild.kettu._patch(packet.d);
 
-  const oldGuild = guild.kettu;
-  const newGuild = guild.kettu._patch(packet.d);
-
-  kettu.emit('guildUpdate', oldGuild, newGuild);
+  kettu.emit('guildUpdate', guild.kettu);
 };
