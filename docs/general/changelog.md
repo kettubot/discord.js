@@ -1,5 +1,11 @@
 # Changelog
 
+## 13.0.0-alpha.10
+
+- `KettuUser#settings#[x]Prefs` now exist all the time
+- A number of kAPI connection events are now available from `KettuClient`
+- The process now automatically reconnects to kAPI when possible
+
 ## 13.0.0-alpha.9
 
 - `KettuImageManager#fetchAll` now fetches all images from a category
