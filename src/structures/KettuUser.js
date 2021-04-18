@@ -86,14 +86,10 @@ class KettuUser {
     this.settings.voteRM = Boolean(data.settings.voteRM);
 
     this.settings.socialDisabled = Boolean(data.settings.socialDisabled);
-    if (data.settings.socialPrefs) {
-      this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs ?? 0);
-    }
+    this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs ?? 0);
 
     this.settings.animalDisabled = Boolean(data.settings.animalDisabled);
-    if (data.settings.animalPrefs) {
-      this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs ?? 0);
-    }
+    this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs ?? 0);
   }
 
   /**
