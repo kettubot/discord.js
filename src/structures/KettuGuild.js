@@ -23,6 +23,12 @@ class KettuGuild {
      */
     this.partial = true;
 
+    /**
+     * Kettu Config for the guild
+     * @type {KettuGuildConfig}
+     */
+    this.config = new KettuGuildConfig(this.guild, {});
+
     if (!data) return;
 
     this._patch(data);
@@ -31,11 +37,7 @@ class KettuGuild {
   _patch(data) {
     this.partial = false;
 
-    /**
-     * Kettu Config for the guild
-     * @type {KettuGuildConfig}
-     */
-    this.config = new KettuGuildConfig(this.guild, data.config);
+    if (data.config) this.config._patch(data.config);
 
     /**
      * Whether the guild is premium or not
