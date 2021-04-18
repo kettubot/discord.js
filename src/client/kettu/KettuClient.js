@@ -127,7 +127,7 @@ class KettuClient extends EventEmitter {
        * Emitted when the client's Kettu connection becomes ready.
        * @event KettuClient#ready
        */
-      this.client.emit(KettuEvents.READY);
+      this.emit(KettuEvents.READY);
     });
 
     this.ws.on(ShardEvents.CLOSE, event => {
@@ -138,7 +138,7 @@ class KettuClient extends EventEmitter {
          * @event KettuClient#disconnected
          * @param {CloseEvent} event The WebSocket close event
          */
-        this.client.emit(KettuEvents.DISCONNECTED, event);
+        this.emit(KettuEvents.DISCONNECTED, event);
         return;
       }
 
@@ -151,7 +151,7 @@ class KettuClient extends EventEmitter {
        * Emitted when the kettu connection is attempting to reconnect or re-identify.
        * @event KettuClient#reconnecting
        */
-      this.client.emit(KettuEvents.RECONNECTING);
+      this.emit(KettuEvents.RECONNECTING);
 
       if (this.ws.sessionID) {
         this.reconnect(true);
@@ -162,11 +162,11 @@ class KettuClient extends EventEmitter {
     });
 
     this.ws.on(ShardEvents.INVALID_SESSION, () => {
-      this.client.emit(KettuEvents.RECONNECTING);
+      this.emit(KettuEvents.RECONNECTING);
     });
 
     this.ws.on(ShardEvents.DESTROYED, () => {
-      this.client.emit(KettuEvents.RECONNECTING);
+      this.emit(KettuEvents.RECONNECTING);
 
       this.ws.connect();
     });
