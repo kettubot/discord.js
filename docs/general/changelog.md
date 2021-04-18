@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.0.0-alpha.12
+
+- `KettuGuild` and `KettuUser` substructures now extend `Base` and pass through `client`
+- `KettuClient` now supports a number of dispatch events
+
 ## 13.0.0-alpha.11
 
 Bugfix.
