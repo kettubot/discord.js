@@ -10,10 +10,17 @@ const MOD_CONFIRM_LEVELS = ['none', 'mass', 'all'];
  */
 class KettuGuildConfigMod {
   /**
+   * @param {Client} client The parent client
    * @param {Guild} guild The guild this config belongs to
    * @param {Object} data The 'mod' data for the guild config
    */
-  constructor(guild, data) {
+  constructor(client, guild, data) {
+    /**
+     * The parent client
+     * @type {Client}
+     */
+    this.client = client;
+
     /**
      * The guild this manager belongs to
      * @type {Guild}

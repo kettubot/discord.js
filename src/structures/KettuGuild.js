@@ -1,16 +1,21 @@
 'use strict';
 
+const Base = require('./Base');
 const KettuGuildConfig = require('./KettuGuildConfig');
 
 /**
  * Interfaces with the kAPI for a specific guild.
+ * @extends {Base}
  */
-class KettuGuild {
+class KettuGuild extends Base {
   /**
+   * @param {Client} client The parent client
    * @param {Guild} guild The guild this data belongs to
    * @param {Object} data The data for the guild
    */
-  constructor(guild, data) {
+  constructor(client, guild, data) {
+    super(client);
+
     /**
      * The guild this manager belongs to
      * @type {Guild}
@@ -27,7 +32,7 @@ class KettuGuild {
      * Kettu Config for the guild
      * @type {KettuGuildConfig}
      */
-    this.config = new KettuGuildConfig(this.guild, {});
+    this.config = new KettuGuildConfig(this.client, this.guild, {});
 
     if (!data) return;
 
@@ -53,7 +58,7 @@ class KettuGuild {
    */
   async fetch(force = false) {
     if (!this.partial && !force) return this;
-    const data = await this.guild.client.kettu.api.guilds(this.guild.id).get();
+    const data = await this.client.kettu.api.guilds(this.guild.id).get();
     this._patch(data);
     return this;
   }

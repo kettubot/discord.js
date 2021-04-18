@@ -1,5 +1,6 @@
 'use strict';
 
+const Base = require('./Base');
 const KettuUserAnimalPrefs = require('../util/KettuUserAnimalPrefs');
 const KettuUserFlags = require('../util/KettuUserFlags');
 const KettuUserPerms = require('../util/KettuUserPerms');
@@ -8,12 +9,15 @@ const KettuUserSocialPrefs = require('../util/KettuUserSocialPrefs');
 /**
  * Represents a Discord User in Kettu's context.
  */
-class KettuUser {
+class KettuUser extends Base {
   /**
+   * @param {Client} client The parent client
    * @param {User} user The user this data belongs to
    * @param {Object} data The data for the user
    */
-  constructor(user, data) {
+  constructor(client, user, data) {
+    super(client);
+
     /**
      * The user this structure belongs to
      * @type {User}
@@ -99,7 +103,7 @@ class KettuUser {
    */
   async fetch(force = false) {
     if (!this.partial && !force) return this;
-    const data = await this.user.client.kettu.api.users(this.user.id).get();
+    const data = await this.client.kettu.api.users(this.user.id).get();
     this._patch(data);
     return this;
   }
@@ -116,7 +120,7 @@ class KettuUser {
 
   async setFlags(flags) {
     if (!(flags instanceof KettuUserFlags)) throw new Error('INVALID_FLAGS');
-    const data = await this.user.client.kettu.api.users(this.user.id).patch({ data: { flags: flags.bitfield } });
+    const data = await this.client.kettu.api.users(this.user.id).patch({ data: { flags: flags.bitfield } });
     this._patch(data);
     return this;
   }
@@ -128,7 +132,7 @@ class KettuUser {
    */
 
   async setProfile(profile) {
-    const data = await this.user.client.kettu.api.users(this.user.id).patch({ data: { profile: profile } });
+    const data = await this.client.kettu.api.users(this.user.id).patch({ data: { profile: profile } });
     this._patch(data);
     return this;
   }
@@ -146,7 +150,7 @@ class KettuUser {
   async setSettings(settings) {
     if (settings.socialPrefs) settings.socialPrefs = settings.socialPrefs.bitfield;
     if (settings.animalPrefs) settings.animalPrefs = settings.animalPrefs.bitfield;
-    const data = await this.user.client.kettu.api.users(this.user.id).patch({ data: { settings: settings } });
+    const data = await this.client.kettu.api.users(this.user.id).patch({ data: { settings: settings } });
     this._patch(data);
     return this;
   }

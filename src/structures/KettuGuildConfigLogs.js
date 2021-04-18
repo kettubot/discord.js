@@ -5,10 +5,17 @@
  */
 class KettuGuildConfigLogs {
   /**
+   * @param {Client} client The parent client
    * @param {Guild} guild The guild this config belongs to
    * @param {Object} data The 'logs' data for the guild config
    */
-  constructor(guild, data) {
+  constructor(client, guild, data) {
+    /**
+     * The parent client
+     * @type {Client}
+     */
+    this.client = client;
+
     /**
      * The guild this manager belongs to
      * @type {Guild}

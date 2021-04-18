@@ -37,7 +37,7 @@ class User extends Base {
        * <info>Requires {@link ClientOptions#kettu} to be enabled.</info>
        * @type {KettuUser}
        */
-      this.kettu = new KettuUser(this);
+      this.kettu = new KettuUser(this.client, this);
     }
 
     this._patch(data);

@@ -110,7 +110,7 @@ class Guild extends Base {
        * <info>Requires {@link ClientOptions#kettu} to be enabled.</info>
        * @type {KettuGuild}
        */
-      this.kettu = new KettuGuild(this);
+      this.kettu = new KettuGuild(this.client, this);
     }
   }
 

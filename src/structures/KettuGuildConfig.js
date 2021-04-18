@@ -10,15 +10,50 @@ const KettuGuildConfigSocial = require('./KettuGuildConfigSocial');
  */
 class KettuGuildConfig {
   /**
+   * @param {Client} client The parent client
    * @param {Guild} guild The guild this config belongs to
    * @param {Object} data The data for the guild config
    */
-  constructor(guild, data) {
+  constructor(client, guild, data) {
+    /**
+     * The parent client
+     * @type {Client}
+     */
+    this.client = client;
+
     /**
      * The guild this manager belongs to
      * @type {Guild}
      */
     this.guild = guild;
+
+    /**
+     * Log configuration for the guild
+     * @type {?KettuGuildConfigLogs}
+     * @name KettuGuildConfig#logs
+     */
+    this.logs = new KettuGuildConfigLogs(this.client, this.guild, {});
+
+    /**
+     * Moderation configuration for the guild
+     * @type {?KettuGuildConfigMod}
+     * @name KettuGuildConfig#mod
+     */
+    this.mod = new KettuGuildConfigMod(this.client, this.guild, {});
+
+    /**
+     * Roles configuration for the guild
+     * @type {?KettuGuildConfigRoles}
+     * @name KettuGuildConfig#roles
+     */
+    this.roles = new KettuGuildConfigRoles(this.client, this.guild, {});
+
+    /**
+     * Automod configuration for the guild
+     * @type {?KettuGuildConfigAutomod}
+     * @name KettuGuildConfig#automod
+     */
+    this.social = new KettuGuildConfigSocial(this.client, this.guild, {});
 
     if (!data) return;
 
@@ -38,33 +73,10 @@ class KettuGuildConfig {
      */
     this.disabled = data.disabled || [];
 
-    /**
-     * Log configuration for the guild
-     * @type {?KettuGuildConfigLogs}
-     * @name KettuGuildConfig#logs
-     */
-    if (data.logs) this.logs = new KettuGuildConfigLogs(this.guild, data.logs);
-
-    /**
-     * Moderation configuration for the guild
-     * @type {?KettuGuildConfigMod}
-     * @name KettuGuildConfig#mod
-     */
-    if (data.mod) this.mod = new KettuGuildConfigMod(this.guild, data.mod);
-
-    /**
-     * Roles configuration for the guild
-     * @type {?KettuGuildConfigRoles}
-     * @name KettuGuildConfig#roles
-     */
-    if (data.roles) this.roles = new KettuGuildConfigRoles(this.guild, data.roles);
-
-    /**
-     * Automod configuration for the guild
-     * @type {?KettuGuildConfigAutomod}
-     * @name KettuGuildConfig#automod
-     */
-    if (data.social) this.social = new KettuGuildConfigSocial(this.guild, data.automod);
+    if (data.logs) this.logs._patch(data.logs);
+    if (data.mod) this.mod._patch(data.mod);
+    if (data.roles) this.roles._patch(data.roles);
+    if (data.social) this.social._patch(data.social);
   }
 
   // These methods are stubs, so we can ignore some eslint errors.
@@ -84,7 +96,7 @@ class KettuGuildConfig {
   async setPrefix(prefix, moderator) {
     if (prefix.includes(' ') || prefix.length > 32) throw new Error('INVALID_PREFIX');
 
-    const newdata = await this.guild.client.kettu.api.guilds(this.guild.id).patch({ data: { prefix: prefix } });
+    const newdata = await this.client.kettu.api.guilds(this.guild.id).patch({ data: { prefix: prefix } });
     this.guild.kettu._patch(newdata);
 
     return this;
