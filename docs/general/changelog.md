@@ -1,5 +1,9 @@
 # Changelog
 
+## 13.0.0-alpha.11
+
+Bugfix.
+
 ## 13.0.0-alpha.10
 
 - `KettuUser#settings#[x]Prefs` now exist all the time
