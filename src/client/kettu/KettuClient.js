@@ -4,7 +4,10 @@ const EventEmitter = require('events');
 const KettuWebSocket = require('./KettuWebSocket');
 const KettuImageManager = require('../../managers/KettuImageManager');
 const KettuRESTManager = require('../../rest/kettu/KettuRESTManager');
-const { KettuEvents } = require('../../util/Constants');
+const { KettuEvents, ShardEvents } = require('../../util/Constants');
+
+const UNRECOVERABLE_CLOSE_CODES = [4004, 4012, 4013, 4014];
+const UNRESUMABLE_CLOSE_CODES = [4007, 4009, 4010];
 
 /**
  * A custom client for interacting with the Kettu API, extending into native d.js objects.
@@ -64,6 +67,8 @@ class KettuClient extends EventEmitter {
      * @private
      */
     this.rest = new KettuRESTManager(this);
+
+    this.attachWSListeners();
   }
 
   /**
@@ -114,6 +119,57 @@ class KettuClient extends EventEmitter {
       this.destroy();
       throw error;
     }
+  }
+
+  attachWSListeners() {
+    this.ws.on(ShardEvents.READY, () => {
+      /**
+       * Emitted when the client's Kettu connection becomes ready.
+       * @event KettuClient#ready
+       */
+      this.client.emit(KettuEvents.READY);
+    });
+
+    this.ws.on(ShardEvents.CLOSE, event => {
+      if (event.code === 1000 ? this.destroyed : UNRECOVERABLE_CLOSE_CODES.includes(event.code)) {
+        /**
+         * Emitted when kettu's websocket becomes disconnected and won't reconnect.
+         * This will also destroy the Discord connection.
+         * @event KettuClient#disconnected
+         * @param {CloseEvent} event The WebSocket close event
+         */
+        this.client.emit(KettuEvents.DISCONNECTED, event);
+        return;
+      }
+
+      if (UNRESUMABLE_CLOSE_CODES.includes(event.code)) {
+        // These event codes cannot be resumed
+        this.ws.sessionID = null;
+      }
+
+      /**
+       * Emitted when the kettu connection is attempting to reconnect or re-identify.
+       * @event KettuClient#reconnecting
+       */
+      this.client.emit(KettuEvents.RECONNECTING);
+
+      if (this.ws.sessionID) {
+        this.reconnect(true);
+      } else {
+        this.ws.destroy({ reset: true, emit: false, log: false });
+        this.ws.connect();
+      }
+    });
+
+    this.ws.on(ShardEvents.INVALID_SESSION, () => {
+      this.client.emit(KettuEvents.RECONNECTING);
+    });
+
+    this.ws.on(ShardEvents.DESTROYED, () => {
+      this.client.emit(KettuEvents.RECONNECTING);
+
+      this.ws.connect();
+    });
   }
 
   /**

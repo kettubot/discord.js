@@ -317,11 +317,12 @@ exports.ShardEvents = {
 };
 
 exports.KettuEvents = {
-  CLIENT_READY: 'ready',
+  READY: 'ready',
   ERROR: 'error',
   WARN: 'warn',
   DEBUG: 'debug',
-  INVALIDATED: 'invalidated',
+  DISCONNECTED: 'disconnected',
+  RECONNECTING: 'reconnecting',
   RAW: 'raw',
 };
 

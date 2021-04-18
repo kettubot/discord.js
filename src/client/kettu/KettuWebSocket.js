@@ -346,8 +346,6 @@ class KettuWebSocket extends EventEmitter {
         this.client.secrets = packet.d.user.secrets;
 
         this.emit(ShardEvents.READY);
-        this.emit(ShardEvents.ALL_READY);
-        this.client.emit(ShardEvents.READY);
 
         this.sessionID = packet.d.session_id;
         this.status = Status.READY;
