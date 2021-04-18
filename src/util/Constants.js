@@ -427,7 +427,16 @@ exports.WSEvents = keyMirror([
  * * GUILD_PING
  * @typedef {string} KettuWSEventType
  */
-exports.KettuWSEvents = keyMirror(['READY', 'RESUMED', 'GUILD_PING']);
+exports.KettuWSEvents = keyMirror([
+  'READY',
+  'RESUMED',
+  'GUILD_PING',
+  'GUILD_UPDATE',
+  'IMAGE_CREATE',
+  'IMAGE_DELETE',
+  'IMAGE_UPDATE',
+  'USER_UPDATE',
+]);
 
 /**
  * A valid scope to request when generating an invite link.
