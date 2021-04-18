@@ -71,9 +71,9 @@ class KettuUser {
      * A user's Kettu settings
      * @typedef {Object} KettuUserSettings
      * @property {boolean} socialDisabled Whether the user has disabled all social commands
-     * @property {?KettuUserSocialPrefs} socialPrefs Social commands to ignore
+     * @property {KettuUserSocialPrefs} socialPrefs Social commands to ignore
      * @property {boolean} animalDisabled Whether the user has disabled all animal commands
-     * @property {?KettuUserAnimalPrefs} animalPrefs Animal commands to ignore
+     * @property {KettuUserAnimalPrefs} animalPrefs Animal commands to ignore
      * @property {boolean} voteRM Whether this user has enabled vote reminders
      */
 
