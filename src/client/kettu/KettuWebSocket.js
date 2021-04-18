@@ -380,16 +380,11 @@ class KettuWebSocket extends EventEmitter {
         this.identify();
         break;
       case KettuOPCodes.RECONNECT:
-        this.debug('[RECONNECT] Discord asked us to reconnect');
+        this.debug('[RECONNECT] kAPI asked us to reconnect');
         this.destroy({ closeCode: 4000 });
         break;
       case KettuOPCodes.INVALID_SESSION:
-        this.debug(`[INVALID SESSION] Resumable: ${packet.d}.`);
-        // If we can resume the session, do so immediately
-        if (packet.d) {
-          this.identifyResume();
-          return;
-        }
+        this.debug(`[INVALID SESSION] Not resumable`);
         // Reset the sequence
         this.sequence = -1;
         // Reset the session ID as it's invalid
@@ -600,7 +595,6 @@ class KettuWebSocket extends EventEmitter {
       token: this.client.token,
       session_id: this.sessionID,
       seq: this.closeSequence,
-      properties: '',
     };
 
     this.send({ op: KettuOPCodes.RESUME, d }, true);
