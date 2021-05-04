@@ -1,6 +1,5 @@
 'use strict';
 
-const { deprecate } = require('util');
 const Base = require('./Base');
 const GuildAuditLogs = require('./GuildAuditLogs');
 const GuildPreview = require('./GuildPreview');
@@ -26,7 +25,7 @@ const {
   ExplicitContentFilterLevels,
 } = require('../util/Constants');
 const DataResolver = require('../util/DataResolver');
-const Snowflake = require('../util/Snowflake');
+const SnowflakeUtil = require('../util/SnowflakeUtil');
 const SystemChannelFlags = require('../util/SystemChannelFlags');
 const Util = require('../util/Util');
 
@@ -104,6 +103,14 @@ class Guild extends Base {
      */
     this.shardID = data.shardID;
 
+    if ('nsfw' in data) {
+      /**
+       * Whether the guild is designated as not safe for work
+       * @type {boolean}
+       */
+      this.nsfw = data.nsfw;
+    }
+
     if (this.client.options.kettu) {
       /**
        * Interfaces with Kettu's configuration for a specific guild.
@@ -180,8 +187,10 @@ class Guild extends Base {
      * * DISCOVERABLE
      * * FEATURABLE
      * * INVITE_SPLASH
+     * * MEMBER_VERIFICATION_GATE_ENABLED
      * * NEWS
      * * PARTNERED
+     * * PREVIEW_ENABLED
      * * RELAY_ENABLED
      * * VANITY_URL
      * * VERIFIED
@@ -191,7 +200,7 @@ class Guild extends Base {
      */
 
     /**
-     * An array of guild features partnered guilds have enabled
+     * An array of guild features available to the guild
      * @type {Features[]}
      */
     this.features = data.features;
@@ -345,14 +354,12 @@ class Guild extends Base {
      */
     this.vanityURLCode = data.vanity_url_code;
 
-    /* eslint-disable max-len */
     /**
      * The use count of the vanity URL code of the guild, if any
      * <info>You will need to fetch this parameter using {@link Guild#fetchVanityData} if you want to receive it</info>
      * @type {?number}
      */
     this.vanityURLUses = null;
-    /* eslint-enable max-len */
 
     /**
      * The description of the guild, if any
@@ -457,7 +464,7 @@ class Guild extends Base {
    * @readonly
    */
   get createdTimestamp() {
-    return Snowflake.deconstruct(this.id).timestamp;
+    return SnowflakeUtil.deconstruct(this.id).timestamp;
   }
 
   /**
@@ -539,17 +546,20 @@ class Guild extends Base {
   }
 
   /**
-   * The owner of the guild
-   * @type {?GuildMember}
-   * @readonly
+   * Options used to fetch the owner of guild.
+   * @typedef {Object} FetchOwnerOptions
+   * @property {boolean} [cache=true] Whether or not to cache the fetched member
+   * @property {boolean} [force=false] Whether to skip the cache check and request the API
    */
-  get owner() {
-    return (
-      this.members.cache.get(this.ownerID) ||
-      (this.client.options.partials.includes(PartialTypes.GUILD_MEMBER)
-        ? this.members.add({ user: { id: this.ownerID } }, true)
-        : null)
-    );
+
+  /**
+   * Fetches the owner of the guild
+   * If the member object isn't needed, use {@link Guild#ownerID} instead
+   * @param {FetchOwnerOptions} [options] The options for fetching the member
+   * @returns {Promise<GuildMember>}
+   */
+  fetchOwner(options) {
+    return this.members.fetch({ ...options, user: this.ownerID });
   }
 
   /**
@@ -775,23 +785,6 @@ class Guild extends Base {
   }
 
   /**
-   * Fetches the vanity url invite code to this guild.
-   * Resolves with a string matching the vanity url invite code, not the full url.
-   * @returns {Promise<string>}
-   * @deprecated
-   * @example
-   * // Fetch invites
-   * guild.fetchVanityCode()
-   *   .then(code => {
-   *     console.log(`Vanity URL: https://discord.gg/${code}`);
-   *   })
-   *   .catch(console.error);
-   */
-  fetchVanityCode() {
-    return this.fetchVanityData().then(vanity => vanity.code);
-  }
-
-  /**
    * An object containing information about a guild's vanity invite.
    * @typedef {Object} Vanity
    * @property {?string} code Vanity invite code
@@ -815,6 +808,7 @@ class Guild extends Base {
       throw new Error('VANITY_URL');
     }
     const data = await this.client.api.guilds(this.id, 'vanity-url').get();
+    this.vanityURLCode = data.code;
     this.vanityURLUses = data.uses;
 
     return data;
@@ -940,11 +934,11 @@ class Guild extends Base {
     if (options.roles) {
       const roles = [];
       for (let role of options.roles instanceof Collection ? options.roles.values() : options.roles) {
-        role = this.roles.resolve(role);
-        if (!role) {
+        let roleID = this.roles.resolveID(role);
+        if (!roleID) {
           throw new TypeError('INVALID_TYPE', 'options.roles', 'Array or Collection of Roles or Snowflakes', true);
         }
-        roles.push(role.id);
+        roles.push(roleID);
       }
       options.roles = roles;
     }
@@ -973,6 +967,8 @@ class Guild extends Base {
    * @property {ChannelResolvable} [rulesChannel] The rules channel of the guild
    * @property {ChannelResolvable} [publicUpdatesChannel] The community updates channel of the guild
    * @property {string} [preferredLocale] The preferred locale of the guild
+   * @property {string} [description] The discovery description of the guild
+   * @property {Features[]} [features] The features of the guild
    */
 
   /**
@@ -1031,6 +1027,12 @@ class Guild extends Base {
     }
     if (typeof data.publicUpdatesChannel !== 'undefined') {
       _data.public_updates_channel_id = this.client.channels.resolveID(data.publicUpdatesChannel);
+    }
+    if (typeof data.features !== 'undefined') {
+      _data.features = data.features;
+    }
+    if (typeof data.description !== 'undefined') {
+      _data.description = data.description;
     }
     if (data.preferredLocale) _data.preferred_locale = data.preferredLocale;
     return this.client.api
@@ -1173,7 +1175,7 @@ class Guild extends Base {
    *  .catch(console.error);
    */
   async setIcon(icon, reason) {
-    return this.edit({ icon: await DataResolver.resolveImage(icon), reason });
+    return this.edit({ icon: await DataResolver.resolveImage(icon) }, reason);
   }
 
   /**
@@ -1203,7 +1205,7 @@ class Guild extends Base {
    *  .catch(console.error);
    */
   async setSplash(splash, reason) {
-    return this.edit({ splash: await DataResolver.resolveImage(splash), reason });
+    return this.edit({ splash: await DataResolver.resolveImage(splash) }, reason);
   }
 
   /**
@@ -1218,7 +1220,7 @@ class Guild extends Base {
    *   .catch(console.error);
    */
   async setDiscoverySplash(discoverySplash, reason) {
-    return this.edit({ discoverySplash: await DataResolver.resolveImage(discoverySplash), reason });
+    return this.edit({ discoverySplash: await DataResolver.resolveImage(discoverySplash) }, reason);
   }
 
   /**
@@ -1232,7 +1234,7 @@ class Guild extends Base {
    *  .catch(console.error);
    */
   async setBanner(banner, reason) {
-    return this.edit({ banner: await DataResolver.resolveImage(banner), reason });
+    return this.edit({ banner: await DataResolver.resolveImage(banner) }, reason);
   }
 
   /**
@@ -1281,14 +1283,24 @@ class Guild extends Base {
   }
 
   /**
+   * Data that can be resolved to give a Category Channel object. This can be:
+   * * A CategoryChannel object
+   * * A Snowflake
+   * @typedef {CategoryChannel|Snowflake} CategoryChannelResolvable
+   */
+
+  /**
    * The data needed for updating a channel's position.
    * @typedef {Object} ChannelPosition
    * @property {ChannelResolvable} channel Channel to update
-   * @property {number} position New position for the channel
+   * @property {number} [position] New position for the channel
+   * @property {CategoryChannelResolvable} [parent] Parent channel for this channel
+   * @property {boolean} [lockPermissions] If the overwrites should be locked to the parents overwrites
    */
 
   /**
    * Batch-updates the guild's channels' positions.
+   * <info>Only one channel's parent can be changed at a time</info>
    * @param {ChannelPosition[]} channelPositions Channel positions to update
    * @returns {Promise<Guild>}
    * @example
@@ -1300,6 +1312,8 @@ class Guild extends Base {
     const updatedChannels = channelPositions.map(r => ({
       id: this.client.channels.resolveID(r.channel),
       position: r.position,
+      lock_permissions: r.lockPermissions,
+      parent_id: this.channels.resolveID(r.parent),
     }));
 
     return this.client.api
@@ -1504,10 +1518,5 @@ class Guild extends Base {
     );
   }
 }
-
-Guild.prototype.fetchVanityCode = deprecate(
-  Guild.prototype.fetchVanityCode,
-  'Guild#fetchVanityCode: Use fetchVanityData() instead',
-);
 
 module.exports = Guild;

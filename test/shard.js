@@ -1,12 +1,12 @@
 'use strict';
 
 const { token } = require('./auth.json');
-const Discord = require('../src');
+const { Client, Intents } = require('../src');
 
-const client = new Discord.Client({
+const client = new Client({
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
   shards: process.argv[2],
   shardCount: process.argv[3],
-  intents: Discord.Intents.NON_PRIVILEGED,
 });
 
 client.on('message', msg => {

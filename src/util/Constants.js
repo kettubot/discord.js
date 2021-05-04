@@ -19,6 +19,9 @@ const { Error, RangeError } = require('../errors');
  * @property {number} [messageSweepInterval=0] How frequently to remove messages from the cache that are older than
  * the message cache lifetime (in seconds, 0 for never)
  * @property {MessageMentionOptions} [allowedMentions] Default value for {@link MessageOptions#allowedMentions}
+ * @property {number} [invalidRequestWarningInterval=0] The number of invalid REST requests (those that return
+ * 401, 403, or 429) in a 10 minute window between emitted warnings (0 for no warnings). That is, if set to 500,
+ * warnings will be emitted at invalid request number 500, 1000, 1500, and so on.
  * @property {PartialType[]} [partials] Structures allowed to be partial. This means events can be emitted even when
  * they're missing all the data for a particular structure. See the "Partials" topic listed in the sidebar for some
  * important usage information, as partials require you to put checks in place when handling data.
@@ -29,6 +32,8 @@ const { Error, RangeError } = require('../errors');
  * @property {number} [restRequestTimeout=15000] Time to wait before cancelling a REST request, in milliseconds
  * @property {number} [restSweepInterval=60] How frequently to delete inactive request buckets, in seconds
  * (or 0 for never)
+ * @property {number} [restGlobalRateLimit=0] How many requests to allow sending per second (0 for unlimited, 50 for
+ * the standard global limit used by Discord)
  * @property {number} [retryLimit=1] How many times to retry on 5XX errors (Infinity for indefinite amount of retries)
  * @property {PresenceData} [presence={}] Presence data to use upon login
  * @property {IntentsResolvable} intents Intents to enable for this connection
@@ -42,9 +47,11 @@ exports.DefaultOptions = {
   messageCacheMaxSize: 200,
   messageCacheLifetime: 0,
   messageSweepInterval: 0,
+  invalidRequestWarningInterval: 0,
   partials: [],
   restWsBridgeTimeout: 5000,
   restRequestTimeout: 15000,
+  restGlobalRateLimit: 0,
   retryLimit: 1,
   restTimeOffset: 500,
   restSweepInterval: 60,
@@ -122,6 +129,7 @@ function makeImageUrl(root, { format = 'webp', size } = {}) {
   if (size && !AllowedImageSizes.includes(size)) throw new RangeError('IMAGE_SIZE', size);
   return `${root}.${format}${size ? `?size=${size}` : ''}`;
 }
+
 /**
  * Options for Image URLs.
  * @typedef {Object} ImageURLOptions
@@ -250,6 +258,7 @@ exports.VoiceOPCodes = {
 
 exports.Events = {
   RATE_LIMIT: 'rateLimit',
+  INVALID_REQUEST_WARNING: 'invalidRequestWarning',
   CLIENT_READY: 'ready',
   GUILD_CREATE: 'guildCreate',
   GUILD_DELETE: 'guildDelete',
@@ -485,6 +494,8 @@ exports.InviteScopes = [
  * * CHANNEL_FOLLOW_ADD
  * * GUILD_DISCOVERY_DISQUALIFIED
  * * GUILD_DISCOVERY_REQUALIFIED
+ * * GUILD_DISCOVERY_GRACE_PERIOD_INITIAL_WARNING
+ * * GUILD_DISCOVERY_GRACE_PERIOD_FINAL_WARNING
  * * REPLY
  * @typedef {string} MessageType
  */
@@ -505,8 +516,8 @@ exports.MessageTypes = [
   null,
   'GUILD_DISCOVERY_DISQUALIFIED',
   'GUILD_DISCOVERY_REQUALIFIED',
-  null,
-  null,
+  'GUILD_DISCOVERY_GRACE_PERIOD_INITIAL_WARNING',
+  'GUILD_DISCOVERY_GRACE_PERIOD_FINAL_WARNING',
   null,
   'REPLY',
 ];
@@ -532,15 +543,19 @@ exports.SystemMessageTypes = exports.MessageTypes.filter(type => type && type !=
  */
 exports.ActivityTypes = ['PLAYING', 'STREAMING', 'LISTENING', 'WATCHING', 'CUSTOM_STATUS', 'COMPETING'];
 
-exports.ChannelTypes = {
-  TEXT: 0,
-  DM: 1,
-  VOICE: 2,
-  GROUP: 3,
-  CATEGORY: 4,
-  NEWS: 5,
-  STORE: 6,
-};
+exports.ChannelTypes = createEnum([
+  'TEXT',
+  'DM',
+  'VOICE',
+  'GROUP',
+  'CATEGORY',
+  'NEWS',
+  // 6
+  'STORE',
+  ...Array(6).fill(null),
+  // 13
+  'STAGE',
+]);
 
 exports.ClientApplicationAssetTypes = {
   SMALL: 1,
@@ -734,6 +749,7 @@ exports.APIErrors = {
   INVITE_ACCEPTED_TO_GUILD_NOT_CONTAINING_BOT: 50036,
   INVALID_API_VERSION: 50041,
   CANNOT_DELETE_COMMUNITY_REQUIRED_CHANNEL: 50074,
+  INVALID_STICKER_SENT: 50081,
   REACTION_BLOCKED: 90001,
   RESOURCE_OVERLOADED: 130000,
 };
@@ -801,6 +817,15 @@ exports.InteractionResponseType = {
   CHANNEL_MESSAGE_WITH_SOURCE: 4,
   ACKNOWLEDGE_WITH_SOURCE: 5,
 };
+
+/**
+ * The value set for a sticker's type:
+ * * PNG
+ * * APNG
+ * * LOTTIE
+ * @typedef {string} StickerFormatTypes
+ */
+exports.StickerFormatTypes = createEnum([null, 'PNG', 'APNG', 'LOTTIE']);
 
 /**
  * An overwrite type:
