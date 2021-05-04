@@ -139,6 +139,7 @@ class KettuClient extends EventEmitter {
          * @param {CloseEvent} event The WebSocket close event
          */
         this.emit(KettuEvents.DISCONNECTED, event);
+        this.client.destroy();
         return;
       }
 
@@ -153,22 +154,22 @@ class KettuClient extends EventEmitter {
        */
       this.emit(KettuEvents.RECONNECTING);
 
-      if (this.ws.sessionID) {
-        this.reconnect(true);
-      } else {
-        this.ws.destroy({ reset: true, emit: false, log: false });
-        this.ws.connect();
-      }
+      if (!this.ws.sessionID) this.ws.destroy({ reset: true, emit: false, log: false });
+
+      setTimeout(() => this.ws.connect(), 5000);
     });
 
     this.ws.on(ShardEvents.INVALID_SESSION, () => {
       this.emit(KettuEvents.RECONNECTING);
+      this.ws.destroy({ reset: true, emit: false, log: false });
+
+      setTimeout(() => this.ws.connect(), 5000);
     });
 
     this.ws.on(ShardEvents.DESTROYED, () => {
       this.emit(KettuEvents.RECONNECTING);
 
-      this.ws.connect();
+      setTimeout(() => this.ws.connect(), 5000);
     });
   }
 
