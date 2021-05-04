@@ -401,18 +401,17 @@ class KettuWebSocket extends EventEmitter {
         break;
       case KettuOPCodes.RETRIEVE_GUILDS: {
         // eslint-disable-next-line no-inner-declarations
-        function processGuild(client, id, req) {
-          const gdata = client.guilds.resolve(id);
+        function processGuild(client, req) {
+          const gdata = client.guilds.resolve(req.id);
           if (!gdata) return null;
 
-          req.id = id;
           if (req.meta) req.meta = gdata.toJSON();
 
-          if (req.roles === true) gdata.roles.cache.map(r => r.toJSON());
+          if (req.roles === true) req.roles = gdata.roles.cache.map(r => r.toJSON());
           else if (req.roles) req.roles = req.roles.map(r => gdata.roles.resolve(r)?.toJSON());
           if (req.roles) req.roles.filter(r => r);
 
-          if (req.channels === true) gdata.channels.cache.map(c => c.toJSON());
+          if (req.channels === true) req.channels = gdata.channels.cache.map(c => c.toJSON());
           else if (req.channels) req.channels = req.channels.map(c => gdata.channels.resolve(c)?.toJSON());
           if (req.channels) req.channels.filter(c => c);
 
@@ -422,31 +421,32 @@ class KettuWebSocket extends EventEmitter {
             const fromCache = req.members.map(m => gdata.members.resolve(m)?.toJSON());
             const needFetching = req.members.filter((_, i) => fromCache[i] === undefined);
             if (needFetching.length === 0) {
-              req.members = fromCache;
+              req.members = fromCache.filter(m => m);
               return req;
             } else {
               // eslint-disable-next-line no-async-promise-executor
               return new Promise(async resolve => {
                 const fetchMemberPromises = needFetching.map(m => gdata.members.fetch(m).catch(e => e));
                 const fetchedMembers = await Promise.all(fetchMemberPromises);
-                req.members = fetchedMembers.filter(m => !(m instanceof Error)).concat(fromCache);
+                req.members = fetchedMembers
+                  .filter(m => !(m instanceof Error))
+                  .concat(fromCache)
+                  .filter(m => m);
                 resolve(req);
               });
             }
           }
         }
 
-        const guilds = Object.entries(packet.d).map(([id, req]) => processGuild(this.client.client, id, req));
-        guilds.filter(g => g);
+        let guilds = packet.d.map(req => processGuild(this.client.client, req));
+        guilds = guilds.filter(g => g);
         if (guilds.filter(g => g instanceof Promise).length > 0) {
-          this.send({ op: 10, a: true }, true);
+          this.send({ op: 10, a: true, n: packet.n }, true);
           Promise.all(guilds).then(final => {
-            const guildobj = final.reduce((t, g) => ({ [g.id]: g, ...t }), {});
-            this.send({ op: 10, d: guildobj }, true);
+            this.send({ op: 10, d: final, n: packet.n }, true);
           });
         } else {
-          const guildobj = guilds.reduce((t, g) => ({ [g.id]: g, ...t }), {});
-          this.send({ op: 10, d: guildobj }, true);
+          this.send({ op: 10, d: guilds, n: packet.n }, true);
         }
 
         break;
