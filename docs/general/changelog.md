@@ -1,5 +1,20 @@
 # Changelog
 
+## 13.0.0-alpha.14
+
+Alpha 14 removes devsnek's interactions branch. This was never tested (by me) and has been superceded by vaporox's branch, which is expected to be merged into the discord.js master soon.
+
+The sync with discord.js#master has also been redone to, you know, work properly.
+
+## 13.0.0-alpha.13
+
+*Warning: this release is unstable and may not function properly.*
+
+Sync with discord.js#master as of release.
+
+- `KettuWebSocket` now supports `RETRIEVE_GUILDS` according to kAPI spec
+- `KettuClient` has improved reconnecting behaviour
+
 ## 13.0.0-alpha.12
 
 - `KettuGuild` and `KettuUser` substructures now extend `Base` and pass through `client`
@@ -10,6 +25,8 @@
 Bugfix.
 
 ## 13.0.0-alpha.10
+
+*Warning: this release is unstable and may not function properly.*
 
 - `KettuUser#settings#[x]Prefs` now exist all the time
 - A number of kAPI connection events are now available from `KettuClient`
