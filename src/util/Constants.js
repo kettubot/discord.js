@@ -312,7 +312,6 @@ exports.Events = {
   SHARD_READY: 'shardReady',
   SHARD_RESUME: 'shardResume',
   INVALIDATED: 'invalidated',
-  INTERACTION_CREATE: 'interactionCreate',
   RAW: 'raw',
 };
 
@@ -386,7 +385,6 @@ exports.PartialTypes = keyMirror(['USER', 'CHANNEL', 'GUILD_MEMBER', 'MESSAGE', 
  * * VOICE_STATE_UPDATE
  * * VOICE_SERVER_UPDATE
  * * WEBHOOKS_UPDATE
- * * INTERACTION_CREATE
  * @typedef {string} WSEventType
  */
 exports.WSEvents = keyMirror([
@@ -426,7 +424,6 @@ exports.WSEvents = keyMirror([
   'VOICE_STATE_UPDATE',
   'VOICE_SERVER_UPDATE',
   'WEBHOOKS_UPDATE',
-  'INTERACTION_CREATE',
 ]);
 
 /**
@@ -787,36 +784,6 @@ exports.WebhookTypes = [
   'Incoming',
   'Channel Follower',
 ];
-
-exports.ApplicationCommandOptionType = {
-  SUB_COMMAND: 1,
-  SUB_COMMAND_GROUP: 2,
-  STRING: 3,
-  INTEGER: 4,
-  BOOLEAN: 5,
-  USER: 6,
-  CHANNEL: 7,
-  ROLE: 8,
-};
-Object.entries(exports.ApplicationCommandOptionType).forEach(([k, v]) => {
-  exports.ApplicationCommandOptionType[v] = k;
-});
-
-exports.InteractionType = {
-  PING: 1,
-  APPLICATION_COMMAND: 2,
-};
-Object.entries(exports.InteractionType).forEach(([k, v]) => {
-  exports.InteractionType[v] = k;
-});
-
-exports.InteractionResponseType = {
-  PONG: 1,
-  ACKNOWLEDGE: 2,
-  CHANNEL_MESSAGE: 3,
-  CHANNEL_MESSAGE_WITH_SOURCE: 4,
-  ACKNOWLEDGE_WITH_SOURCE: 5,
-};
 
 /**
  * The value set for a sticker's type:

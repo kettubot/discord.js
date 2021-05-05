@@ -39,12 +39,6 @@ class APIMessage {
      * @type {?Object[]}
      */
     this.files = null;
-
-    /**
-     * Whether to hide the source of an interaction command.
-     * @type {boolean}
-     */
-    this.hideSource = false;
   }
 
   /**
@@ -77,16 +71,6 @@ class APIMessage {
   get isMessage() {
     const Message = require('./Message');
     return this.target instanceof Message;
-  }
-
-  /**
-   * Whether or not the target is an interaction
-   * @type {boolean}
-   * @readonly
-   */
-  get isInteraction() {
-    const Interaction = require('./Interaction');
-    return this.target instanceof Interaction;
   }
 
   /**
@@ -165,9 +149,6 @@ class APIMessage {
     if (this.isMessage) {
       // eslint-disable-next-line eqeqeq
       flags = this.options.flags != null ? new MessageFlags(this.options.flags).bitfield : this.target.flags.bitfield;
-    } else if (this.isInteraction) {
-      flags = this.options.ephemeral ? MessageFlags.FLAGS.EPHEMERAL : undefined;
-      this.hideSource = !!this.options.hideSource;
     }
 
     let allowedMentions =
