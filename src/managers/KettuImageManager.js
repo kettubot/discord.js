@@ -40,10 +40,10 @@ class KettuImageManager {
    * Get an image from a category
    * @param {string} category The image category
    * @param {KettuImageResolvable} image Image to retrieve
-   * @param {boolean} force Whether to force fetch (implied if category is 'RANDOM')
+   * @param {boolean} [force=true] Whether to force fetch (implied if category is 'RANDOM')
    * @returns {Promise<KettuImage>}
    */
-  async fetch(category, image, force = false) {
+  async fetch(category, image, force = true) {
     category = category.toLowerCase();
     if (!IMAGE_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
 
