@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.0.0-alpha.15
+
+- Added the property `KettuImage#feedback` and the method `KettuImage#removeFeedback`
+- `KettuImageManager#fetch` now forces by default (to ensure up-to-date feedback)
+
 ## 13.0.0-alpha.14
 
 Alpha 14 removes devsnek's interactions branch. This was never tested (by me) and has been superceded by vaporox's branch, which is expected to be merged into the discord.js master soon.
