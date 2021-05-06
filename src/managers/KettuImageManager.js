@@ -87,14 +87,9 @@ class KettuImageManager {
   async create(category, data) {
     category = category.toLowerCase();
     if (!IMAGE_CATEGORIES.includes(category)) throw new Error('INVALID_CATEGORY');
-
     if (!data.direct) throw new Error('MISSING_DATA_DIRECT');
 
-    // Stub ID
-    data.id = Math.round(Math.random() * 1000);
-
     const image = await this.client.api.images[category].post(data);
-
     return new KettuImage(this, category, image);
   }
 }
