@@ -67,7 +67,25 @@ class KettuImage {
       this.tags = data.tags;
     }
 
-    /** */
+    if (data.feedback) {
+      /**
+       * Data representing feedback on an image
+       * @typedef {KettuImageFeedback}
+       * @property {Array<Snowflake>} likes Likes on the image
+       * @property {Array<Snowflake>} dislikes Dislikes on the image
+       * @property {Array<KettuImageFlagData>} flags Flags on the image
+       */
+
+      /**
+       * Feedback for this image
+       * @type {KettuImageFeedback}
+       */
+      this.feedback = data.feedback || {};
+
+      if (!this.feedback.likes) this.feedback.likes = [];
+      if (!this.feedback.dislikes) this.feedback.dislikes = [];
+      if (!this.feedback.flags) this.feedback.flags = [];
+    }
   }
 
   /**
@@ -127,6 +145,20 @@ class KettuImage {
    */
   addFeedback(likes = [], dislikes = [], flags = []) {
     return this.manager.client.api.images[this.category](this.id).feedback.patch({ data: { likes, dislikes, flags } });
+  }
+
+  /**
+   * Removes feedback for the image.
+   * @param {Array<Snowflake>} likes Users to remove likes for
+   * @param {Array<Snowflake>} dislikes Users to remove dislikes for
+   * @param {Array<Snowflake>} flags Users to remove flags for
+   * @returns {Promise<KettuImage>}
+   * @example
+   * // Removes all likes, dislikes and flags for the message author
+   * await image.removeFeedback([msg.author.id], [msg.author.id], [msg.author.id])
+   */
+  removeFeedback(likes = [], dislikes = [], flags = []) {
+    return this.manager.client.api.images[this.category](this.id).feedback.delete({ data: { likes, dislikes, flags } });
   }
 }
 
