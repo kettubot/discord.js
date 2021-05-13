@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.0.0-alpha.16
+
+Sync with discord.js#master as of release.
+
+**Supports slash commands beta!**
+
+- Fixed a bug in `KettuUser` where `voteRM` would return undefined
+- Added `KettuAPIError` for more useful errors
+
 ## 13.0.0-alpha.15
 
 - Added the property `KettuImage#feedback` and the method `KettuImage#removeFeedback`
