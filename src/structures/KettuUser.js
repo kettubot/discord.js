@@ -69,7 +69,7 @@ class KettuUser extends Base {
      * This user's Kettu profile information
      * @type {KettuUserProfile}
      */
-    this.profile = data.profile;
+    this.profile = data.profile || {};
 
     /**
      * A user's Kettu settings
@@ -87,13 +87,13 @@ class KettuUser extends Base {
      */
     this.settings = {};
 
-    this.settings.voteRM = Boolean(data.settings.voteRM);
+    this.settings.voteRM = Boolean(data.settings?.voteRM);
 
-    this.settings.socialDisabled = Boolean(data.settings.socialDisabled);
-    this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings.socialPrefs ?? 0);
+    this.settings.socialDisabled = Boolean(data.settings?.socialDisabled);
+    this.settings.socialPrefs = new KettuUserSocialPrefs(data.settings?.socialPrefs ?? 0);
 
-    this.settings.animalDisabled = Boolean(data.settings.animalDisabled);
-    this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings.animalPrefs ?? 0);
+    this.settings.animalDisabled = Boolean(data.settings?.animalDisabled);
+    this.settings.animalPrefs = new KettuUserAnimalPrefs(data.settings?.animalPrefs ?? 0);
   }
 
   /**
