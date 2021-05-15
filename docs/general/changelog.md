@@ -1,5 +1,12 @@
 # Changelog
 
+## 13.0.0-alpha.17
+
+Sync with discord.js#master as of release.
+
+- `KettuWebSocket` supports blacklist options
+- New retrieve guilds behaviour implemented
+
 ## 13.0.0-alpha.16
 
 Sync with discord.js#master as of release.
