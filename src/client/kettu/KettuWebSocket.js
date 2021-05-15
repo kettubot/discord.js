@@ -438,15 +438,17 @@ class KettuWebSocket extends EventEmitter {
           }
         }
 
-        let guilds = packet.d.map(req => processGuild(this.client.client, req));
-        guilds = guilds.filter(g => g);
+        let guilds = packet.d.map(req => processGuild(this.client.client, req)).filter(g => g);
+        const clientuser = this.client.client.user;
+        const self = { id: '_self', username: clientuser?.username, avatar: clientuser?.avatar };
+
         if (guilds.filter(g => g instanceof Promise).length > 0) {
           this.send({ op: 10, a: true, n: packet.n }, true);
           Promise.all(guilds).then(final => {
-            this.send({ op: 10, d: final, n: packet.n }, true);
+            this.send({ op: 10, d: [...final, self], n: packet.n }, true);
           });
         } else {
-          this.send({ op: 10, d: guilds, n: packet.n }, true);
+          this.send({ op: 10, d: [...guilds, self], n: packet.n }, true);
         }
 
         break;
