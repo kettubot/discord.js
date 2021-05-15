@@ -333,18 +333,21 @@ class KettuWebSocket extends EventEmitter {
 
     switch (packet.t) {
       case KettuWSEvents.READY:
+        // Load data into Kettu's client
+        this.discord_token = packet.d.user.token;
+        this.client.defaultPrefix = packet.d.user.default_prefix;
+        this.client.secrets = packet.d.user.secrets;
+        this.client.blacklist = packet.d.user.blacklist ?? [];
+
+        // Load in options
+        for (const opt of Object.keys(packet.d.user.options)) {
+          this.client.client.options[opt] = packet.d.user.options[opt];
+        }
+
         /**
          * Emitted when the shard receives the READY payload and is fully ready
          * @event KettuWebSocket#ready
          */
-        this.discord_token = packet.d.user.token;
-
-        for (const opt of Object.keys(packet.d.user.options)) {
-          this.client.client.options[opt] = packet.d.user.options[opt];
-        }
-        this.client.defaultPrefix = packet.d.user.default_prefix;
-        this.client.secrets = packet.d.user.secrets;
-
         this.emit(ShardEvents.READY);
 
         this.sessionID = packet.d.session_id;
