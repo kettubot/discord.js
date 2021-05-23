@@ -235,13 +235,11 @@ exports.OPCodes = {
 exports.KettuOPCodes = {
   DISPATCH: 0,
   HEARTBEAT: 1,
-  HEARTBEAT_ACK: 2,
   HELLO: 3,
   IDENTIFY: 4,
   RESUME: 5,
   INVALID_SESSION: 6,
   RECONNECT: 7,
-  REQUEST_GUILDS: 9,
 };
 
 exports.VoiceOPCodes = {
