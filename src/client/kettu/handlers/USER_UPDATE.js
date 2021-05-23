@@ -12,5 +12,5 @@ module.exports = (kettu, packet) => {
 
   user.kettu._patch(packet.d);
 
-  kettu.emit('guildUpdate', user.kettu);
+  kettu.emit('userUpdate', user.kettu);
 };
