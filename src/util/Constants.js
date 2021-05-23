@@ -242,7 +242,6 @@ exports.KettuOPCodes = {
   INVALID_SESSION: 6,
   RECONNECT: 7,
   REQUEST_GUILDS: 9,
-  RETRIEVE_GUILDS: 10,
 };
 
 exports.VoiceOPCodes = {
@@ -455,6 +454,7 @@ exports.KettuWSEvents = keyMirror([
   'IMAGE_DELETE',
   'IMAGE_UPDATE',
   'USER_UPDATE',
+  'RETRIEVE_GUILDS',
 ]);
 
 /**
