@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.0.0-alpha.18
+
+Sync with discord.js#master as of release. **This includes message components!**
+
+- `KettuWebSocket` no longer supports `RETRIEVE_GUILDS` (moved to kettu source)
+- `KettuClient` no longer screws up with event names
+- `Constants` has been synced with kAPI
+
 ## 13.0.0-alpha.17
 
 Sync with discord.js#master as of release.
