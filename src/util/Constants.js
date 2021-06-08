@@ -579,14 +579,15 @@ exports.Colors = {
   DEFAULT: 0x000000,
   WHITE: 0xffffff,
   AQUA: 0x1abc9c,
-  GREEN: 0x2ecc71,
+  GREEN: 0x57f287,
   BLUE: 0x3498db,
-  YELLOW: 0xffff00,
+  YELLOW: 0xfee75c,
   PURPLE: 0x9b59b6,
   LUMINOUS_VIVID_PINK: 0xe91e63,
+  FUCHSIA: 0xeb459e,
   GOLD: 0xf1c40f,
   ORANGE: 0xe67e22,
-  RED: 0xe74c3c,
+  RED: 0xed4245,
   GREY: 0x95a5a6,
   NAVY: 0x34495e,
   DARK_AQUA: 0x11806a,
@@ -601,7 +602,7 @@ exports.Colors = {
   DARKER_GREY: 0x7f8c8d,
   LIGHT_GREY: 0xbcc0c0,
   DARK_NAVY: 0x2c3e50,
-  BLURPLE: 0x7289da,
+  BLURPLE: 0x5865f2,
   GREYPLE: 0x99aab5,
   DARK_BUT_NOT_BLACK: 0x2c2f33,
   NOT_QUITE_BLACK: 0x23272a,
@@ -856,15 +857,18 @@ exports.ApplicationCommandPermissionTypes = createEnum([null, 'ROLE', 'USER']);
  * The type of an {@link Interaction} object:
  * * PING
  * * APPLICATION_COMMAND
+ * * MESSAGE_COMPONENT
  * @typedef {string} InteractionType
  */
-exports.InteractionTypes = createEnum([null, 'PING', 'APPLICATION_COMMAND']);
+exports.InteractionTypes = createEnum([null, 'PING', 'APPLICATION_COMMAND', 'MESSAGE_COMPONENT']);
 
 /**
  * The type of an interaction response:
  * * PONG
  * * CHANNEL_MESSAGE_WITH_SOURCE
  * * DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+ * * DEFERRED_MESSAGE_UPDATE
+ * * UPDATE_MESSAGE
  * @typedef {string} InteractionResponseType
  */
 exports.InteractionResponseTypes = createEnum([
@@ -874,7 +878,38 @@ exports.InteractionResponseTypes = createEnum([
   null,
   'CHANNEL_MESSAGE_WITH_SOURCE',
   'DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE',
+  'DEFERRED_MESSAGE_UPDATE',
+  'UPDATE_MESSAGE',
 ]);
+
+/**
+ * The type of a message component
+ * * ACTION_ROW
+ * * BUTTON
+ * @typedef {string} MessageComponentType
+ */
+exports.MessageComponentTypes = createEnum([null, 'ACTION_ROW', 'BUTTON']);
+
+/**
+ * The style of a message button
+ * * PRIMARY
+ * * SECONDARY
+ * * SUCCESS
+ * * DANGER
+ * * LINK
+ * @typedef {string} MessageButtonStyle
+ */
+exports.MessageButtonStyles = createEnum([null, 'PRIMARY', 'SECONDARY', 'SUCCESS', 'DANGER', 'LINK']);
+
+/**
+ * NSFW level of a Guild
+ * * DEFAULT
+ * * EXPLICIT
+ * * SAFE
+ * * AGE_RESTRICTED
+ * @typedef {string} NSFWLevel
+ */
+exports.NSFWLevels = createEnum(['DEFAULT', 'EXPLICIT', 'SAFE', 'AGE_RESTRICTED']);
 
 function keyMirror(arr) {
   let tmp = Object.create(null);

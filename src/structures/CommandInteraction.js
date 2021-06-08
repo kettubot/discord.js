@@ -1,19 +1,26 @@
 'use strict';
 
-const APIMessage = require('./APIMessage');
 const Interaction = require('./Interaction');
-const WebhookClient = require('../client/WebhookClient');
-const { Error } = require('../errors');
-const { ApplicationCommandOptionTypes, InteractionResponseTypes } = require('../util/Constants');
-const MessageFlags = require('../util/MessageFlags');
+const InteractionWebhook = require('./InteractionWebhook');
+const InteractionResponses = require('./interfaces/InteractionResponses');
+const Collection = require('../util/Collection');
+const { ApplicationCommandOptionTypes } = require('../util/Constants');
 
 /**
  * Represents a command interaction.
  * @extends {Interaction}
+ * @implements {InteractionResponses}
  */
 class CommandInteraction extends Interaction {
   constructor(client, data) {
     super(client, data);
+
+    /**
+     * The channel this interaction was sent in
+     * @type {?TextChannel|NewsChannel|DMChannel}
+     * @name CommandInteraction#channel
+     * @readonly
+     */
 
     /**
      * The ID of the invoked application command
@@ -35,9 +42,9 @@ class CommandInteraction extends Interaction {
 
     /**
      * The options passed to the command.
-     * @type {CommandInteractionOption[]}
+     * @type {Collection<string, CommandInteractionOption>}
      */
-    this.options = data.data.options?.map(o => this.transformOption(o, data.data.resolved)) ?? [];
+    this.options = this._createOptionsCollection(data.data.options, data.data.resolved);
 
     /**
      * Whether this interaction has already been replied to
@@ -46,10 +53,10 @@ class CommandInteraction extends Interaction {
     this.replied = false;
 
     /**
-     * An associated webhook client, can be used to create deferred replies
-     * @type {WebhookClient}
+     * An associated interaction webhook, can be used to further interact with this interaction
+     * @type {InteractionWebhook}
      */
-    this.webhook = new WebhookClient(this.applicationID, this.token, this.client.options);
+    this.webhook = new InteractionWebhook(this.client, this.applicationID, this.token);
   }
 
   /**
@@ -62,148 +69,18 @@ class CommandInteraction extends Interaction {
   }
 
   /**
-   * Defers the reply to this interaction.
-   * @param {boolean} [ephemeral] Whether the reply should be ephemeral
-   * @returns {Promise<void>}
-   * @example
-   * // Defer the reply to this interaction
-   * interaction.defer()
-   *   .then(console.log)
-   *   .catch(console.error)
-   * @example
-   * // Defer to send an ephemeral reply later
-   * interaction.defer(true)
-   *   .then(console.log)
-   *   .catch(console.error);
-   */
-  async defer(ephemeral) {
-    if (this.deferred || this.replied) throw new Error('INTERACTION_ALREADY_REPLIED');
-    await this.client.api.interactions(this.id, this.token).callback.post({
-      data: {
-        type: InteractionResponseTypes.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          flags: ephemeral ? MessageFlags.FLAGS.EPHEMERAL : undefined,
-        },
-      },
-    });
-    this.deferred = true;
-  }
-
-  /**
-   * Options for a reply to an interaction.
-   * @typedef {WebhookMessageOptions} InteractionReplyOptions
-   * @property {boolean} [ephemeral] Whether the reply should be ephemeral
-   */
-
-  /**
-   * Creates a reply to this interaction.
-   * @param {string|APIMessage|MessageAdditions} content The content for the reply
-   * @param {InteractionReplyOptions} [options] Additional options for the reply
-   * @returns {Promise<void>}
-   * @example
-   * // Reply to the interaction with an embed
-   * const embed = new MessageEmbed().setDescription('Pong!');
-   *
-   * interaction.reply(embed)
-   *   .then(console.log)
-   *   .catch(console.error);
-   * @example
-   * // Create an ephemeral reply
-   * interaction.reply('Pong!', { ephemeral: true })
-   *   .then(console.log)
-   *   .catch(console.error);
-   */
-  async reply(content, options) {
-    if (this.deferred || this.replied) throw new Error('INTERACTION_ALREADY_REPLIED');
-    const apiMessage = content instanceof APIMessage ? content : APIMessage.create(this, content, options);
-    const { data, files } = await apiMessage.resolveData().resolveFiles();
-
-    await this.client.api.interactions(this.id, this.token).callback.post({
-      data: {
-        type: InteractionResponseTypes.CHANNEL_MESSAGE_WITH_SOURCE,
-        data,
-      },
-      files,
-    });
-    this.replied = true;
-  }
-
-  /**
-   * Fetches the initial reply to this interaction.
-   * @see Webhook#fetchMessage
-   * @returns {Promise<Message|Object>}
-   * @example
-   * // Fetch the reply to this interaction
-   * interaction.fetchReply()
-   *   .then(reply => console.log(`Replied with ${reply.content}`))
-   *   .catch(console.error);
-   */
-  async fetchReply() {
-    const raw = await this.webhook.fetchMessage('@original');
-    return this.channel?.messages.add(raw) ?? raw;
-  }
-
-  /**
-   * Edits the initial reply to this interaction.
-   * @see Webhook#editMessage
-   * @param {string|APIMessage|MessageEmbed|MessageEmbed[]} content The new content for the message
-   * @param {WebhookEditMessageOptions} [options] The options to provide
-   * @returns {Promise<Message|Object>}
-   * @example
-   * // Edit the reply to this interaction
-   * interaction.editReply('New content')
-   *   .then(console.log)
-   *   .catch(console.error);
-   */
-  async editReply(content, options) {
-    const raw = await this.webhook.editMessage('@original', content, options);
-    return this.channel?.messages.add(raw) ?? raw;
-  }
-
-  /**
-   * Deletes the initial reply to this interaction.
-   * @see Webhook#deleteMessage
-   * @returns {Promise<void>}
-   * @example
-   * // Delete the reply to this interaction
-   * interaction.deleteReply()
-   *   .then(console.log)
-   *   .catch(console.error);
-   */
-  async deleteReply() {
-    await this.webhook.deleteMessage('@original');
-  }
-
-  /**
    * Represents an option of a received command interaction.
    * @typedef {Object} CommandInteractionOption
    * @property {string} name The name of the option
    * @property {ApplicationCommandOptionType} type The type of the option
    * @property {string|number|boolean} [value] The value of the option
-   * @property {CommandInteractionOption[]} [options] Additional options if this option is a subcommand (group)
+   * @property {Collection<string, CommandInteractionOption>} [options] Additional options if this option is a
+   * subcommand (group)
    * @property {User} [user] The resolved user
    * @property {GuildMember|Object} [member] The resolved member
    * @property {GuildChannel|Object} [channel] The resolved channel
    * @property {Role|Object} [role] The resolved role
    */
-
-  /**
-   * Send a follow-up message to this interaction.
-   * @param {string|APIMessage|MessageAdditions} content The content for the reply
-   * @param {InteractionReplyOptions} [options] Additional options for the reply
-   * @returns {Promise<Message|Object>}
-   */
-  async followUp(content, options) {
-    const apiMessage = content instanceof APIMessage ? content : APIMessage.create(this, content, options);
-    const { data, files } = await apiMessage.resolveData().resolveFiles();
-
-    const raw = await this.client.api.webhooks(this.applicationID, this.token).post({
-      data,
-      files,
-    });
-
-    return this.channel?.messages.add(raw) ?? raw;
-  }
 
   /**
    * Transforms an option received from the API.
@@ -219,7 +96,7 @@ class CommandInteraction extends Interaction {
     };
 
     if ('value' in option) result.value = option.value;
-    if ('options' in option) result.options = option.options.map(o => this.transformOption(o, resolved));
+    if ('options' in option) result.options = this._createOptionsCollection(option.options, resolved);
 
     const user = resolved?.users?.[option.value];
     if (user) result.user = this.client.users.add(user);
@@ -235,6 +112,33 @@ class CommandInteraction extends Interaction {
 
     return result;
   }
+
+  /**
+   * Creates a collection of options from the received options array.
+   * @param {Object[]} options The received options
+   * @param {Object} resolved The resolved interaction data
+   * @returns {Collection<string, CommandInteractionOption>}
+   * @private
+   */
+  _createOptionsCollection(options, resolved) {
+    const optionsCollection = new Collection();
+    if (typeof options === 'undefined') return optionsCollection;
+    for (const option of options) {
+      optionsCollection.set(option.name, this.transformOption(option, resolved));
+    }
+    return optionsCollection;
+  }
+
+  // These are here only for documentation purposes - they are implemented by InteractionResponses
+  /* eslint-disable no-empty-function */
+  defer() {}
+  reply() {}
+  fetchReply() {}
+  editReply() {}
+  deleteReply() {}
+  followUp() {}
 }
+
+InteractionResponses.applyToClass(CommandInteraction, ['deferUpdate', 'update']);
 
 module.exports = CommandInteraction;

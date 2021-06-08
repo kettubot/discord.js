@@ -6,6 +6,7 @@ const APIMessage = require('../APIMessage');
 const SnowflakeUtil = require('../../util/SnowflakeUtil');
 const Collection = require('../../util/Collection');
 const { RangeError, TypeError } = require('../../errors');
+const MessageComponentInteractionCollector = require('../MessageComponentInteractionCollector');
 
 /**
  * Interface for classes that have text-channel-like features.
@@ -51,18 +52,26 @@ class TextBasedChannel {
   }
 
   /**
-   * Options provided when sending or editing a message.
-   * @typedef {Object} MessageOptions
+   * Base options provided when sending.
+   * @typedef {Object} BaseMessageOptions
    * @property {boolean} [tts=false] Whether or not the message should be spoken aloud
    * @property {string} [nonce=''] The nonce for the message
    * @property {string} [content=''] The content for the message
-   * @property {MessageEmbed|Object} [embed] An embed for the message
-   * (see [here](https://discord.com/developers/docs/resources/channel#embed-object) for more details)
    * @property {MessageMentionOptions} [allowedMentions] Which mentions should be parsed from the message content
-   * @property {FileOptions[]|BufferResolvable[]} [files] Files to send with the message
+   * (see [here](https://discord.com/developers/docs/resources/channel#allowed-mentions-object) for more details)
+   * @property {FileOptions[]|BufferResolvable[]|MessageAttachment[]} [files] Files to send with the message
    * @property {string|boolean} [code] Language for optional codeblock formatting to apply
    * @property {boolean|SplitOptions} [split=false] Whether or not the message should be split into multiple messages if
    * it exceeds the character limit. If an object is provided, these are the options for splitting the message
+   * @property {MessageActionRow[]} [components] Action rows containing interactive components for the message
+   * (buttons, select menus)
+   */
+
+  /**
+   * Options provided when sending or editing a message.
+   * @typedef {BaseMessageOptions} MessageOptions
+   * @property {MessageEmbed|Object} [embed] An embed for the message
+   * (see [here](https://discord.com/developers/docs/resources/channel#embed-object) for more details)
    * @property {ReplyOptions} [reply] The options for replying to a message
    */
 
@@ -108,7 +117,7 @@ class TextBasedChannel {
 
   /**
    * Sends a message to this channel.
-   * @param {StringResolvable|APIMessage} [content=''] The content to send
+   * @param {string|APIMessage} [content=''] The content to send
    * @param {MessageOptions|MessageAdditions} [options={}] The options to provide
    * @returns {Promise<Message|Message[]>}
    * @example
@@ -310,6 +319,45 @@ class TextBasedChannel {
   }
 
   /**
+   * Creates a button interaction collector.
+   * @param {CollectorFilter} filter The filter to apply
+   * @param {MessageComponentInteractionCollectorOptions} [options={}] Options to send to the collector
+   * @returns {MessageComponentInteractionCollector}
+   * @example
+   * // Create a button interaction collector
+   * const filter = (interaction) => interaction.customID === 'button' && interaction.user.id === 'someID';
+   * const collector = channel.createMessageComponentInteractionCollector(filter, { time: 15000 });
+   * collector.on('collect', i => console.log(`Collected ${i.customID}`));
+   * collector.on('end', collected => console.log(`Collected ${collected.size} items`));
+   */
+  createMessageComponentInteractionCollector(filter, options = {}) {
+    return new MessageComponentInteractionCollector(this, filter, options);
+  }
+
+  /**
+   * Similar to createMessageComponentInteractionCollector but in promise form.
+   * Resolves with a collection of interactions that pass the specified filter.
+   * @param {CollectorFilter} filter The filter function to use
+   * @param {AwaitMessageComponentInteractionsOptions} [options={}] Optional options to pass to the internal collector
+   * @returns {Promise<Collection<string, MessageComponentInteraction>>}
+   * @example
+   * // Create a button interaction collector
+   * const filter = (interaction) => interaction.customID === 'button' && interaction.user.id === 'someID';
+   * channel.awaitMessageComponentInteractions(filter, { time: 15000 })
+   *   .then(collected => console.log(`Collected ${collected.size} interactions`))
+   *   .catch(console.error);
+   */
+  awaitMessageComponentInteractions(filter, options = {}) {
+    return new Promise((resolve, reject) => {
+      const collector = this.createMessageComponentInteractionCollector(filter, options);
+      collector.once('end', (interactions, reason) => {
+        if (options.errors && options.errors.includes(reason)) reject(interactions);
+        else resolve(interactions);
+      });
+    });
+  }
+
+  /**
    * Bulk deletes given messages that are newer than two weeks.
    * @param {Collection<Snowflake, Message>|MessageResolvable[]|number} messages
    * Messages or number of messages to delete
@@ -373,6 +421,8 @@ class TextBasedChannel {
         'typingCount',
         'createMessageCollector',
         'awaitMessages',
+        'createMessageComponentInteractionCollector',
+        'awaitMessageComponentInteractions',
       );
     }
     for (const prop of props) {

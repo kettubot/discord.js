@@ -1,6 +1,6 @@
 'use strict';
 
-const Base = require('./Base');
+const BaseGuild = require('./BaseGuild');
 const GuildAuditLogs = require('./GuildAuditLogs');
 const GuildPreview = require('./GuildPreview');
 const GuildTemplate = require('./GuildTemplate');
@@ -25,9 +25,9 @@ const {
   PartialTypes,
   VerificationLevels,
   ExplicitContentFilterLevels,
+  NSFWLevels,
 } = require('../util/Constants');
 const DataResolver = require('../util/DataResolver');
-const SnowflakeUtil = require('../util/SnowflakeUtil');
 const SystemChannelFlags = require('../util/SystemChannelFlags');
 const Util = require('../util/Util');
 
@@ -35,15 +35,11 @@ const Util = require('../util/Util');
  * Represents a guild (or a server) on Discord.
  * <info>It's recommended to see if a guild is available before performing operations or reading data from it. You can
  * check this with `guild.available`.</info>
- * @extends {Base}
+ * @extends {BaseGuild}
  */
-class Guild extends Base {
-  /**
-   * @param {Client} client The instantiating client
-   * @param {Object} data The data for the guild
-   */
+class Guild extends BaseGuild {
   constructor(client, data) {
-    super(client);
+    super(client, data);
 
     /**
      * A manager of the application commands belonging to this guild
@@ -100,12 +96,6 @@ class Guild extends Base {
        * @type {boolean}
        */
       this.available = false;
-
-      /**
-       * The Unique ID of the guild, useful for comparisons
-       * @type {Snowflake}
-       */
-      this.id = data.id;
     } else {
       this._patch(data);
       if (!data.channels) this.available = false;
@@ -150,17 +140,11 @@ class Guild extends Base {
    * @private
    */
   _patch(data) {
-    /**
-     * The name of the guild
-     * @type {string}
-     */
+    this.id = data.id;
     this.name = data.name;
-
-    /**
-     * The hash of the guild icon
-     * @type {?string}
-     */
     this.icon = data.icon;
+    this.features = data.features;
+    this.available = !data.unavailable;
 
     /**
      * The hash of the guild invite splash image
@@ -186,6 +170,14 @@ class Guild extends Base {
      */
     this.memberCount = data.member_count || this.memberCount;
 
+    if ('nsfw_level' in data) {
+      /**
+       * The NSFW level of this guild
+       * @type {NSFWLevel}
+       */
+      this.nsfwLevel = NSFWLevels[data.nsfw_level];
+    }
+
     /**
      * Whether the guild is "large" (has more than large_threshold members, 50 by default)
      * @type {boolean}
@@ -202,22 +194,19 @@ class Guild extends Base {
      * * FEATURABLE
      * * INVITE_SPLASH
      * * MEMBER_VERIFICATION_GATE_ENABLED
+     * * MONETIZATION_ENABLED
+     * * MORE_STICKERS
      * * NEWS
      * * PARTNERED
      * * PREVIEW_ENABLED
      * * RELAY_ENABLED
+     * * TICKETED_EVENTS_ENABLED
      * * VANITY_URL
      * * VERIFIED
      * * VIP_REGIONS
      * * WELCOME_SCREEN_ENABLED
      * @typedef {string} Features
      */
-
-    /**
-     * An array of guild features available to the guild
-     * @type {Features[]}
-     */
-    this.features = data.features;
 
     /**
      * The ID of the application that created this guild (if applicable)
@@ -387,10 +376,6 @@ class Guild extends Base {
      */
     this.banner = data.banner;
 
-    this.id = data.id;
-    this.available = !data.unavailable;
-    this.features = data.features || this.features || [];
-
     /**
      * The ID of the rules channel for the guild
      * @type {?Snowflake}
@@ -473,70 +458,12 @@ class Guild extends Base {
   }
 
   /**
-   * The timestamp the guild was created at
-   * @type {number}
-   * @readonly
-   */
-  get createdTimestamp() {
-    return SnowflakeUtil.deconstruct(this.id).timestamp;
-  }
-
-  /**
-   * The time the guild was created at
-   * @type {Date}
-   * @readonly
-   */
-  get createdAt() {
-    return new Date(this.createdTimestamp);
-  }
-
-  /**
    * The time the client user joined the guild
    * @type {Date}
    * @readonly
    */
   get joinedAt() {
     return new Date(this.joinedTimestamp);
-  }
-
-  /**
-   * If this guild is partnered
-   * @type {boolean}
-   * @readonly
-   */
-  get partnered() {
-    return this.features.includes('PARTNERED');
-  }
-
-  /**
-   * If this guild is verified
-   * @type {boolean}
-   * @readonly
-   */
-  get verified() {
-    return this.features.includes('VERIFIED');
-  }
-
-  /**
-   * The URL to this guild's icon.
-   * @param {ImageURLOptions} [options={}] Options for the Image URL
-   * @returns {?string}
-   */
-  iconURL({ format, size, dynamic } = {}) {
-    if (!this.icon) return null;
-    return this.client.rest.cdn.Icon(this.id, this.icon, format, size, dynamic);
-  }
-
-  /**
-   * The acronym that shows up in place of a guild icon.
-   * @type {string}
-   * @readonly
-   */
-  get nameAcronym() {
-    return this.name
-      .replace(/'s /g, ' ')
-      .replace(/\w+/g, e => e[0])
-      .replace(/\s/g, '');
   }
 
   /**
@@ -567,8 +494,8 @@ class Guild extends Base {
    */
 
   /**
-   * Fetches the owner of the guild
-   * If the member object isn't needed, use {@link Guild#ownerID} instead
+   * Fetches the owner of the guild.
+   * If the member object isn't needed, use {@link Guild#ownerID} instead.
    * @param {FetchOwnerOptions} [options] The options for fetching the member
    * @returns {Promise<GuildMember>}
    */
@@ -633,20 +560,6 @@ class Guild extends Base {
         ? this.members.add({ user: { id: this.client.user.id } }, true)
         : null)
     );
-  }
-
-  /**
-   * Fetches this guild.
-   * @returns {Promise<Guild>}
-   */
-  fetch() {
-    return this.client.api
-      .guilds(this.id)
-      .get({ query: { with_counts: true } })
-      .then(data => {
-        this._patch(data);
-        return this;
-      });
   }
 
   /**
@@ -1416,17 +1329,6 @@ class Guild extends Base {
         (this.features.length === guild.features.length &&
           this.features.every((feat, i) => feat === guild.features[i])))
     );
-  }
-
-  /**
-   * When concatenated with a string, this automatically returns the guild's name instead of the Guild object.
-   * @returns {string}
-   * @example
-   * // Logs: Hello from My Guild!
-   * console.log(`Hello from ${guild}!`);
-   */
-  toString() {
-    return this.name;
   }
 
   toJSON() {
