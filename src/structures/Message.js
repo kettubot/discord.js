@@ -2,8 +2,10 @@
 
 const APIMessage = require('./APIMessage');
 const Base = require('./Base');
+const BaseMessageComponent = require('./BaseMessageComponent');
 const ClientApplication = require('./ClientApplication');
 const MessageAttachment = require('./MessageAttachment');
+const MessageComponentInteractionCollector = require('./MessageComponentInteractionCollector');
 const Embed = require('./MessageEmbed');
 const Mentions = require('./MessageMentions');
 const ReactionCollector = require('./ReactionCollector');
@@ -124,6 +126,12 @@ class Message extends Base {
     this.embeds = (data.embeds || []).map(e => new Embed(e, true));
 
     /**
+     * A list of MessageActionRows in the message
+     * @type {MessageActionRow[]}
+     */
+    this.components = (data.components ?? []).map(c => BaseMessageComponent.create(c, this.client));
+
+    /**
      * A collection of attachments in the message - e.g. Pictures - mapped by their ID
      * @type {Collection<Snowflake, MessageAttachment>}
      */
@@ -184,7 +192,13 @@ class Message extends Base {
      * Supplemental application information for group activities
      * @type {?ClientApplication}
      */
-    this.application = data.application ? new ClientApplication(this.client, data.application) : null;
+    this.groupActivityApplication = data.application ? new ClientApplication(this.client, data.application) : null;
+
+    /**
+     * ID of the application of the interaction that sent this message, if any
+     * @type {?Snowflake}
+     */
+    this.applicationID = data.application_id ?? null;
 
     /**
      * Group activity
@@ -235,7 +249,7 @@ class Message extends Base {
 
     /**
      * Partial data of the interaction that a message is a reply to
-     * @typedef {object} MessageInteraction
+     * @typedef {Object} MessageInteraction
      * @property {Snowflake} id The ID of the interaction
      * @property {InteractionType} type The type of the interaction
      * @property {string} commandName The name of the interaction's application command
@@ -282,6 +296,8 @@ class Message extends Base {
     if ('tts' in data) this.tts = data.tts;
     if ('embeds' in data) this.embeds = data.embeds.map(e => new Embed(e, true));
     else this.embeds = this.embeds.slice();
+    if ('components' in data) this.components = data.components.map(c => BaseMessageComponent.create(c, this.client));
+    else this.components = this.components.slice();
 
     if ('attachments' in data) {
       this.attachments = new Collection();
@@ -408,6 +424,51 @@ class Message extends Base {
   }
 
   /**
+   * Creates a message component interaction collector.
+   * @param {CollectorFilter} filter The filter to apply
+   * @param {MessageComponentInteractionCollectorOptions} [options={}] Options to send to the collector
+   * @returns {MessageComponentInteractionCollector}
+   * @example
+   * // Create a message component interaction collector
+   * const filter = (interaction) => interaction.customID === 'button' && interaction.user.id === 'someID';
+   * const collector = message.createMessageComponentInteractionCollector(filter, { time: 15000 });
+   * collector.on('collect', i => console.log(`Collected ${i.customID}`));
+   * collector.on('end', collected => console.log(`Collected ${collected.size} items`));
+   */
+  createMessageComponentInteractionCollector(filter, options = {}) {
+    return new MessageComponentInteractionCollector(this, filter, options);
+  }
+
+  /**
+   * An object containing the same properties as CollectorOptions, but a few more:
+   * @typedef {MessageComponentInteractionCollectorOptions} AwaitMessageComponentInteractionsOptions
+   * @property {string[]} [errors] Stop/end reasons that cause the promise to reject
+   */
+
+  /**
+   * Similar to createMessageComponentInteractionCollector but in promise form.
+   * Resolves with a collection of interactions that pass the specified filter.
+   * @param {CollectorFilter} filter The filter function to use
+   * @param {AwaitMessageComponentInteractionsOptions} [options={}] Optional options to pass to the internal collector
+   * @returns {Promise<Collection<string, MessageComponentInteraction>>}
+   * @example
+   * // Create a message component interaction collector
+   * const filter = (interaction) => interaction.customID === 'button' && interaction.user.id === 'someID';
+   * message.awaitMessageComponentInteractions(filter, { time: 15000 })
+   *   .then(collected => console.log(`Collected ${collected.size} interactions`))
+   *   .catch(console.error);
+   */
+  awaitMessageComponentInteractions(filter, options = {}) {
+    return new Promise((resolve, reject) => {
+      const collector = this.createMessageComponentInteractionCollector(filter, options);
+      collector.once('end', (interactions, reason) => {
+        if (options.errors && options.errors.includes(reason)) reject(interactions);
+        else resolve(interactions);
+      });
+    });
+  }
+
+  /**
    * Whether the message is editable by the client user
    * @type {boolean}
    * @readonly
@@ -474,18 +535,22 @@ class Message extends Base {
   /**
    * Options that can be passed into {@link Message#edit}.
    * @typedef {Object} MessageEditOptions
-   * @property {string} [content] Content to be edited
+   * @property {?string} [content] Content to be edited
    * @property {MessageEmbed|Object} [embed] An embed to be added/edited
    * @property {string|boolean} [code] Language for optional codeblock formatting to apply
    * @property {MessageMentionOptions} [allowedMentions] Which mentions should be parsed from the message content
    * @property {MessageFlags} [flags] Which flags to set for the message. Only `SUPPRESS_EMBEDS` can be edited.
-   * @property {MessageAttachment[]} [attachments] The new attachments of the message (can only be removed, not added)
+   * @property {MessageAttachment[]} [attachments] An array of attachments to keep,
+   * all attachments will be kept if omitted
+   * @property {FileOptions[]|BufferResolvable[]|MessageAttachment[]} [files] Files to add to the message
+   * @property {MessageActionRow[]} [components] Action rows containing interactive components for the message
+   * (buttons, select menus)
    */
 
   /**
    * Edits the content of the message.
-   * @param {StringResolvable|APIMessage} [content] The new content for the message
-   * @param {MessageEditOptions|MessageEmbed} [options] The options to provide
+   * @param {?(string|APIMessage)} [content] The new content for the message
+   * @param {MessageEditOptions|MessageEmbed|MessageAttachment|MessageAttachment[]} [options] The options to provide
    * @returns {Promise<Message>}
    * @example
    * // Update the content of a message
@@ -494,7 +559,7 @@ class Message extends Base {
    *   .catch(console.error);
    */
   edit(content, options) {
-    options = content instanceof APIMessage ? content : APIMessage.create(this.channel, content, options);
+    options = content instanceof APIMessage ? content : APIMessage.create(this, content, options);
     return this.channel.messages.edit(this.id, options);
   }
 
@@ -581,26 +646,23 @@ class Message extends Base {
 
   /**
    * Options provided when sending a message as an inline reply.
-   * @typedef {Object} ReplyMessageOptions
-   * @property {boolean} [tts=false] Whether or not the message should be spoken aloud
-   * @property {string} [nonce=''] The nonce for the message
-   * @property {string} [content=''] The content for the message
+   * @typedef {BaseMessageOptions} ReplyMessageOptions
    * @property {MessageEmbed|Object} [embed] An embed for the message
    * (see [here](https://discord.com/developers/docs/resources/channel#embed-object) for more details)
-   * @property {MessageMentionOptions} [allowedMentions] Which mentions should be parsed from the message content
-   * @property {FileOptions[]|BufferResolvable[]} [files] Files to send with the message
-   * @property {string|boolean} [code] Language for optional codeblock formatting to apply
-   * @property {boolean|SplitOptions} [split=false] Whether or not the message should be split into multiple messages if
-   * it exceeds the character limit. If an object is provided, these are the options for splitting the message
    * @property {boolean} [failIfNotExists=true] Whether to error if the referenced message
    * does not exist (creates a standard message in this case when false)
    */
 
   /**
    * Send an inline reply to this message.
-   * @param {StringResolvable|APIMessage} [content=''] The content for the message
+   * @param {string|APIMessage} [content=''] The content for the message
    * @param {ReplyMessageOptions|MessageAdditions} [options] The additional options to provide
    * @returns {Promise<Message|Message[]>}
+   * @example
+   * // Reply to a message
+   * message.reply('This is a reply!')
+   *   .then(() => console.log(`Replied to message "${message.content}"`))
+   *   .catch(console.error);
    */
   reply(content, options) {
     return this.channel.send(
@@ -705,7 +767,7 @@ class Message extends Base {
     return super.toJSON({
       channel: 'channelID',
       author: 'authorID',
-      application: 'applicationID',
+      groupActivityApplication: 'groupActivityApplicationID',
       guild: 'guildID',
       cleanContent: true,
       member: false,

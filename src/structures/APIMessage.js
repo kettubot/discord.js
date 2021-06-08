@@ -1,5 +1,6 @@
 'use strict';
 
+const BaseMessageComponent = require('./BaseMessageComponent');
 const MessageAttachment = require('./MessageAttachment');
 const MessageEmbed = require('./MessageEmbed');
 const { RangeError } = require('../errors');
@@ -80,7 +81,8 @@ class APIMessage {
    */
   get isInteraction() {
     const Interaction = require('./Interaction');
-    return this.target instanceof Interaction;
+    const InteractionWebhook = require('./InteractionWebhook');
+    return this.target instanceof Interaction || this.target instanceof InteractionWebhook;
   }
 
   /**
@@ -92,7 +94,7 @@ class APIMessage {
     if (this.options.content === null) {
       content = '';
     } else if (typeof this.options.content !== 'undefined') {
-      content = Util.resolveString(this.options.content);
+      content = Util.verifyString(this.options.content, RangeError, 'MESSAGE_CONTENT_TYPE', false);
     }
 
     if (typeof content !== 'string') return content;
@@ -125,6 +127,9 @@ class APIMessage {
    */
   resolveData() {
     if (this.data) return this;
+    const isInteraction = this.isInteraction;
+    const isWebhook = this.isWebhook;
+    const isWebhookLike = isInteraction || isWebhook;
 
     const content = this.makeContent();
     const tts = Boolean(this.options.tts);
@@ -139,7 +144,7 @@ class APIMessage {
     }
 
     const embedLikes = [];
-    if (this.isInteraction || this.isWebhook) {
+    if (isWebhookLike) {
       if (this.options.embeds) {
         embedLikes.push(...this.options.embeds);
       }
@@ -148,9 +153,11 @@ class APIMessage {
     }
     const embeds = embedLikes.map(e => new MessageEmbed(e).toJSON());
 
+    const components = this.options.components?.map(c => BaseMessageComponent.create(c).toJSON());
+
     let username;
     let avatarURL;
-    if (this.isWebhook) {
+    if (isWebhook) {
       username = this.options.username || this.target.name;
       if (this.options.avatarURL) avatarURL = this.options.avatarURL;
     }
@@ -159,7 +166,7 @@ class APIMessage {
     if (this.isMessage) {
       // eslint-disable-next-line eqeqeq
       flags = this.options.flags != null ? new MessageFlags(this.options.flags).bitfield : this.target.flags.bitfield;
-    } else if (this.isInteraction && this.options.ephemeral) {
+    } else if (isInteraction && this.options.ephemeral) {
       flags = MessageFlags.FLAGS.EPHEMERAL;
     }
 
@@ -191,8 +198,9 @@ class APIMessage {
       content,
       tts,
       nonce,
-      embed: this.options.embed === null ? null : embeds[0],
-      embeds,
+      embed: !isWebhookLike ? (this.options.embed === null ? null : embeds[0]) : undefined,
+      embeds: isWebhookLike ? embeds : undefined,
+      components,
       username,
       avatar_url: avatarURL,
       allowed_mentions:
@@ -322,7 +330,7 @@ class APIMessage {
   /**
    * Transforms the user-level arguments into a final options object. Passing a transformed options object alone into
    * this method will keep it the same, allowing for the reuse of the final options object.
-   * @param {StringResolvable} [content] Content to send
+   * @param {string} [content] Content to send
    * @param {MessageOptions|WebhookMessageOptions|MessageAdditions} [options={}] Options to use
    * @param {MessageOptions|WebhookMessageOptions} [extra={}] Extra options to add onto transformed options
    * @param {boolean} [isWebhook=false] Whether or not to use WebhookMessageOptions as the result
@@ -358,17 +366,22 @@ class APIMessage {
   /**
    * Creates an `APIMessage` from user-level arguments.
    * @param {MessageTarget} target Target to send to
-   * @param {StringResolvable} [content] Content to send
+   * @param {string} [content] Content to send
    * @param {MessageOptions|WebhookMessageOptions|MessageAdditions} [options={}] Options to use
    * @param {MessageOptions|WebhookMessageOptions} [extra={}] - Extra options to add onto transformed options
    * @returns {MessageOptions|WebhookMessageOptions}
    */
   static create(target, content, options, extra = {}) {
     const Interaction = require('./Interaction');
+    const InteractionWebhook = require('./InteractionWebhook');
     const Webhook = require('./Webhook');
     const WebhookClient = require('../client/WebhookClient');
 
-    const isWebhook = target instanceof Interaction || target instanceof Webhook || target instanceof WebhookClient;
+    const isWebhook =
+      target instanceof Interaction ||
+      target instanceof InteractionWebhook ||
+      target instanceof Webhook ||
+      target instanceof WebhookClient;
     const transformed = this.transformOptions(content, options, extra, isWebhook);
     return new this(target, transformed);
   }
@@ -378,7 +391,7 @@ module.exports = APIMessage;
 
 /**
  * A target for a message.
- * @typedef {TextChannel|DMChannel|User|GuildMember|Webhook|WebhookClient} MessageTarget
+ * @typedef {TextChannel|DMChannel|User|GuildMember|Webhook|WebhookClient|Interaction|InteractionWebhook} MessageTarget
  */
 
 /**
