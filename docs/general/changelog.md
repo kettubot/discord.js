@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.0.0-alpha.19
+
+Sync with discord.js#master as of release.
+
+This release contains no features, but acts as a signal point for a significant breaking change.
+
+See [#5758](https://github.com/discordjs/discord.js/pull/5758) and [#5791](https://github.com/discordjs/discord.js/pull/5791).
+
 ## 13.0.0-alpha.18
 
 Sync with discord.js#master as of release. **This includes message components!**
