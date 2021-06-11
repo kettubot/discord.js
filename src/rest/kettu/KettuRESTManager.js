@@ -55,7 +55,7 @@ class KettuRESTManager {
         throw new HTTPError(err.message, err.constructor.name, err.status, request.method, request.path);
       }
 
-      throw new DiscordAPIError(request.path, data, request.method, res.status);
+      throw new DiscordAPIError(data, res.status, request);
     }
 
     // Handle 5xx responses
