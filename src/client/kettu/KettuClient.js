@@ -69,6 +69,12 @@ class KettuClient extends EventEmitter {
     this.token = null;
 
     /**
+     * Discord token
+     * @type {?string}
+     */
+    this.discordToken = null;
+
+    /**
      * Default prefix for this client
      * @type {?string}
      */
@@ -94,7 +100,7 @@ class KettuClient extends EventEmitter {
     if (data.name) this.name = data.name;
     if (data.allowed_guilds) this.allowedGuilds = data.allowed_guilds;
 
-    if (data.token) this.token = data.token;
+    if (data.token) this.discordToken = data.token;
     if (data.defaultPrefix) this.defaultPrefix = data.default_prefix;
     if (data.secrets) this.secrets = data.secrets;
     if (data.blacklist) this.blacklist = data.blacklist ?? [];
@@ -146,11 +152,11 @@ class KettuClient extends EventEmitter {
     this.emit(KettuEvents.DEBUG, 'Preparing to connect to kAPI gateway...');
     await this.ws.connect();
 
-    if (this.token) {
+    if (this.discordToken) {
       this.emit(KettuEvents.DEBUG, 'Connected to kAPI, starting Discord client...');
 
       try {
-        await this.client.login(this.token);
+        await this.client.login(this.discordToken);
         return this.token;
       } catch (error) {
         this.destroy();
