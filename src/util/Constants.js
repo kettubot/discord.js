@@ -461,6 +461,14 @@ exports.WSEvents = keyMirror([
  * * READY
  * * RESUMED
  * * GUILD_PING
+ * * GUILD_UPDATE
+ * * IMAGE_CREATE
+ * * IMAGE_DELETE
+ * * IMAGE_UPDATE
+ * * USER_UPDATE
+ * * RETRIEVE_GUILDS
+ * * GITHUB_HOOK
+ * * KAPI_ERROR_CREATE
  * @typedef {string} KettuWSEventType
  */
 exports.KettuWSEvents = keyMirror([
@@ -473,6 +481,8 @@ exports.KettuWSEvents = keyMirror([
   'IMAGE_UPDATE',
   'USER_UPDATE',
   'RETRIEVE_GUILDS',
+  'GITHUB_HOOK',
+  'KAPI_ERROR_CREATE',
 ]);
 
 /**
