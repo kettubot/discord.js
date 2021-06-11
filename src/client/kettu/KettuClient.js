@@ -38,6 +38,18 @@ class KettuClient extends EventEmitter {
     this.images = new KettuImageManager(this);
 
     /**
+     * Name of this kettu client (for bot types)
+     * @type {string}
+     */
+    this.name = null;
+
+    /**
+     * Allowed guilds for this kettu client (for bot types)
+     * @type {Array<Snowflake>}
+     */
+    this.allowedGuilds = [];
+
+    /**
      * Blacklisted users for this Kettu client
      * @type {Array<Snowflake>}
      */
@@ -69,6 +81,22 @@ class KettuClient extends EventEmitter {
     this.rest = new KettuRESTManager(this);
 
     this.attachWSListeners();
+  }
+
+  _patch(data) {
+    if (data.name) this.name = data.name;
+    if (data.allowed_guilds) this.allowedGuilds = data.allowed_guilds;
+
+    if (data.token) this.token = data.token;
+    if (data.defaultPrefix) this.defaultPrefix = data.default_prefix;
+    if (data.secrets) this.secrets = data.secrets;
+    if (data.blacklist) this.blacklist = data.blacklist ?? [];
+
+    if (data.options) {
+      for (const opt of Object.keys(data.options)) {
+        this.client.options[opt] = data.options[opt];
+      }
+    }
   }
 
   /**
@@ -109,15 +137,21 @@ class KettuClient extends EventEmitter {
     );
 
     this.emit(KettuEvents.DEBUG, 'Preparing to connect to kAPI gateway...');
-    const discord_token = await this.ws.connect();
-    this.emit(KettuEvents.DEBUG, 'Connected to kAPI, starting Discord client...');
+    await this.ws.connect();
 
-    try {
-      await this.client.login(discord_token);
-      return this.token;
-    } catch (error) {
-      this.destroy();
-      throw error;
+    if (this.token) {
+      this.emit(KettuEvents.DEBUG, 'Connected to kAPI, starting Discord client...');
+
+      try {
+        await this.client.login(this.token);
+        return this.token;
+      } catch (error) {
+        this.destroy();
+        throw error;
+      }
+    } else {
+      this.emit(KettuEvents.DEBUG, 'Connected to kAPI, ready to start Discord client.');
+      return true;
     }
   }
 

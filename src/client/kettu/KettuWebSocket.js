@@ -172,7 +172,7 @@ class KettuWebSocket extends EventEmitter {
 
       const onReady = () => {
         cleanup();
-        resolve(this.discord_token);
+        resolve();
       };
 
       const onResumed = () => {
@@ -334,15 +334,7 @@ class KettuWebSocket extends EventEmitter {
     switch (packet.t) {
       case KettuWSEvents.READY:
         // Load data into Kettu's client
-        this.discord_token = packet.d.user.token;
-        this.client.defaultPrefix = packet.d.user.default_prefix;
-        this.client.secrets = packet.d.user.secrets;
-        this.client.blacklist = packet.d.user.blacklist ?? [];
-
-        // Load in options
-        for (const opt of Object.keys(packet.d.user.options)) {
-          this.client.client.options[opt] = packet.d.user.options[opt];
-        }
+        this.client._patch(packet.d.user);
 
         /**
          * Emitted when the shard receives the READY payload and is fully ready

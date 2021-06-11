@@ -11,3 +11,5 @@ These properties are only added if the {@link ClientOptions#kettu} option is ena
 ## Using as Kettu
 
 When using the fork for an instance of `kettu`, remember to use `client.kettu.login` rather than `client.login`, and a Kettu token instead of a Discord token. The Discord token will automatically be loaded in through kAPI.
+
+The fork can also be used as a kAPI `bot` user, however not all functionality is guaranteed to work correctly (depends on permissions and such). In this case, use `client.kettu.login` first, and then when `client.kettu` emits `READY`, login with `client.login`.
