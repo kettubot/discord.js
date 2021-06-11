@@ -3,6 +3,7 @@
 const EventEmitter = require('events');
 const KettuWebSocket = require('./KettuWebSocket');
 const KettuImageManager = require('../../managers/KettuImageManager');
+const KettuStoreManager = require('../../managers/KettuStoreManager');
 const KettuRESTManager = require('../../rest/kettu/KettuRESTManager');
 const { KettuEvents, ShardEvents } = require('../../util/Constants');
 
@@ -36,6 +37,12 @@ class KettuClient extends EventEmitter {
      * @type {KettuImageManager}
      */
     this.images = new KettuImageManager(this);
+
+    /**
+     * Data store manager for this kettu client
+     * @type {KettuStoreManager}
+     */
+    this.store = new KettuStoreManager(this);
 
     /**
      * Name of this kettu client (for bot types)
