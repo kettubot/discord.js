@@ -1,5 +1,12 @@
 # Changelog
 
+## 13.0.0-alpha.20
+
+- `KettuClient` now (vaguely) supports `bot` user types (still needs testing)
+- `KettuWebSocket` supports the `GITHUB_HOOK` and `KAPI_ERROR_CREATE` events
+- `KettuStoreManager` manages the user's data store (coming soon (tm))
+- Fixed a bug in `KettuRESTManager`
+
 ## 13.0.0-alpha.19
 
 Sync with discord.js#master as of release.
