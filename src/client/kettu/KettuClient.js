@@ -101,7 +101,7 @@ class KettuClient extends EventEmitter {
     if (data.allowed_guilds) this.allowedGuilds = data.allowed_guilds;
 
     if (data.token) this.discordToken = data.token;
-    if (data.defaultPrefix) this.defaultPrefix = data.default_prefix;
+    if (data.default_prefix) this.defaultPrefix = data.default_prefix;
     if (data.secrets) this.secrets = data.secrets;
     if (data.blacklist) this.blacklist = data.blacklist ?? [];
 
