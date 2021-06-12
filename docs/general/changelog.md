@@ -1,6 +1,12 @@
 # Changelog
 
+## 13.0.0-alpha.21
+
+Fixes a bug in `KettuClient` which makes `defaultPrefix` always null.
+
 ## 13.0.0-alpha.20
+
+*Warning: this release breaks `KettuClient.defaultPrefix`. Patched in alpha 21.*
 
 - `KettuClient` now (vaguely) supports `bot` user types (still needs testing)
 - `KettuWebSocket` supports the `GITHUB_HOOK` and `KAPI_ERROR_CREATE` events
