@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.0.0-alpha.22
+
+- `KettuClient` now supports the sharding system
+- `KettuClient.broadcastEvalProperty` fetches a value from all connected shards
+
 ## 13.0.0-alpha.21
 
 Fixes a bug in `KettuClient` which makes `defaultPrefix` always null.
