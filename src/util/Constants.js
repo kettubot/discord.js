@@ -469,6 +469,7 @@ exports.WSEvents = keyMirror([
  * * RETRIEVE_GUILDS
  * * GITHUB_HOOK
  * * KAPI_ERROR_CREATE
+ * * SHARD_EVAL
  * @typedef {string} KettuWSEventType
  */
 exports.KettuWSEvents = keyMirror([
@@ -483,6 +484,7 @@ exports.KettuWSEvents = keyMirror([
   'RETRIEVE_GUILDS',
   'GITHUB_HOOK',
   'KAPI_ERROR_CREATE',
+  'SHARD_EVAL',
 ]);
 
 /**
