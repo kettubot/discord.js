@@ -510,10 +510,11 @@ class KettuWebSocket extends EventEmitter {
       ...client.options.ws,
       intents: KettuIntents.resolve(client.options.intents),
       token: client.token,
+      shard: client.shard,
       properties: '',
     };
 
-    this.debug(`[KETTU IDENTIFIED]`);
+    this.debug(`[KETTU IDENTIFYING...]`);
     this.send({ op: KettuOPCodes.IDENTIFY, d }, true);
   }
 

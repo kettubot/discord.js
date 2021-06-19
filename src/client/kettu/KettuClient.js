@@ -134,19 +134,23 @@ class KettuClient extends EventEmitter {
   /**
    * Logs the Kettu client in, and then the Discord client
    * @param {string} token Token of the (Kettu) account to log in with
+   * @param {string} shard Current shard instance identifier
    * @returns {Promise<string>} Token of the account used
    * @example
    * client.kettu.login('my kettu token');
    */
-  async login(token) {
+  async login(token, shard) {
     if (!token || typeof token !== 'string') throw new Error('TOKEN_INVALID');
+    if (!shard || typeof shard !== 'string') throw new Error('SHARD_INVALID');
     this.token = token.replace(/^(Bot|Bearer)\s*/i, '');
+    this.shard = shard;
     this.emit(
       KettuEvents.DEBUG,
       `Provided token: ${token
         .split('.')
         .map((val, i) => (i > 1 ? val.replace(/./g, '*') : val))
-        .join('.')}`,
+        .join('.')}
+      Provided shard: ${shard}`,
     );
 
     this.emit(KettuEvents.DEBUG, 'Preparing to connect to kAPI gateway...');
