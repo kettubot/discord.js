@@ -215,7 +215,7 @@ class KettuClient extends EventEmitter {
    * const values = await client.kettu.broadcastProperty('client.guilds.cache.size')
    * console.log(values.reduce((total, current) => total + current.result, 0))
    */
-  broadcastProperty(query, options) {
+  broadcastEvalProperty(query, options) {
     if (!this.client?.user?.id) throw new Error('Discord Client not yet connected');
     return this.api.kettu(this.client.user.id).eval.post({ data: { type: 0, query, ...options } });
   }
