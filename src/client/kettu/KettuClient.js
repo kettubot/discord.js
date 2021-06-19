@@ -172,6 +172,54 @@ class KettuClient extends EventEmitter {
     }
   }
 
+  /**
+   * A string to identify a specific shard of kettu
+   * ```
+   * If we have the data 'Njk4MDM4MTQ4MDU1MzAyMTc0LjAuMS4xNjI0MDcxMDk0MjE1' we can Base64 decode it:
+   *
+   * 698038148055302174.  0.     1.          1624071094215
+   * bot id of shard      shard  num_shards  timestamp
+   * ```
+   * @typedef {string} KettuShardIdentifierFull
+   */
+
+  /**
+   * A string to identify a specific shard of kettu
+   * Takes the format of a {@link KettuShardIdentifierFull}, but without the trailing timestamp
+   * @typedef {string} KettuShardIdentifier
+   */
+
+  /**
+   * A shard's result from a kettu broadcast eval
+   * @typedef {Object} KettuBroadcastEvalResult
+   * @property {KettuShardIdentifier} shard Shard this result belongs to
+   * @property {?*} result The returned data, none may be present if `undefined`
+   */
+
+  /**
+   * Options for a kettu broadcast eval of any type
+   * @typedef {Object} KettuBroadcastEvalOptions
+   * @property {?number} abort Time (in ms) to wait before aborting the eval client-side
+   * @property {?number} timeout Time (in ms) to wait for a shard to respond server-side
+   * @property {?Array<KettuShardIdentifier|KettuShardIdentifierFull>} shards Shards to send the request to (null will
+   * default to all connected shards)
+   */
+
+  /**
+   * Fetches a property from all other connected shards
+   * @param {string} query Value to fetch
+   * @param {KettuBroadcastEvalOptions} options Broadcast options
+   * @returns {Promise<Array<KettuBroadcastEvalResult>>}
+   * @example
+   * client.kettu.login('my kettu token');
+   * const values = await client.kettu.broadcastProperty('client.guilds.cache.size')
+   * console.log(values.reduce((total, current) => total + current.result, 0))
+   */
+  broadcastProperty(query, options) {
+    if (!this.client?.user?.id) throw new Error('Discord Client not yet connected');
+    return this.api.kettu(this.client.user.id).eval.post({ data: { type: 0, query, ...options } });
+  }
+
   attachWSListeners() {
     this.ws.on(ShardEvents.READY, () => {
       /**
