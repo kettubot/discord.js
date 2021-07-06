@@ -49,6 +49,19 @@ class KettuGuild extends Base {
      * @type {boolean}
      */
     this.premium = Boolean(data.premium);
+
+    /**
+     * The current audit information, if applicable
+     * @name KettuGuild#audit
+     * @type {?Object}
+     */
+    if (data.audit) this.audit = data.audit;
+
+    /**
+     * The next case number (approximately)
+     * @type {number}
+     */
+    this.nextCaseNumber = data.nextCaseNumber;
   }
 
   /**
