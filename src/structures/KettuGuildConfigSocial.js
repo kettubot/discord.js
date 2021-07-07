@@ -6,10 +6,10 @@
 class KettuGuildConfigSocial {
   /**
    * @param {Client} client The parent client
-   * @param {Guild} guild The guild this config belongs to
    * @param {Object} data The 'social' data for the guild config
+   * @param {Guild} guild The guild this config belongs to
    */
-  constructor(client, guild, data) {
+  constructor(client, data, guild) {
     /**
      * The parent client
      * @type {Client}

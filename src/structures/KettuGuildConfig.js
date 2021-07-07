@@ -11,10 +11,10 @@ const KettuGuildConfigSocial = require('./KettuGuildConfigSocial');
 class KettuGuildConfig {
   /**
    * @param {Client} client The parent client
-   * @param {Guild} guild The guild this config belongs to
    * @param {Object} data The data for the guild config
+   * @param {Guild} guild The guild this config belongs to
    */
-  constructor(client, guild, data) {
+  constructor(client, data, guild) {
     /**
      * The parent client
      * @type {Client}
@@ -32,28 +32,28 @@ class KettuGuildConfig {
      * @type {?KettuGuildConfigLogs}
      * @name KettuGuildConfig#logs
      */
-    this.logs = new KettuGuildConfigLogs(this.client, this.guild, {});
+    this.logs = new KettuGuildConfigLogs(this.client, null, this.guild);
 
     /**
      * Moderation configuration for the guild
      * @type {?KettuGuildConfigMod}
      * @name KettuGuildConfig#mod
      */
-    this.mod = new KettuGuildConfigMod(this.client, this.guild, {});
+    this.mod = new KettuGuildConfigMod(this.client, null, this.guild);
 
     /**
      * Roles configuration for the guild
      * @type {?KettuGuildConfigRoles}
      * @name KettuGuildConfig#roles
      */
-    this.roles = new KettuGuildConfigRoles(this.client, this.guild, {});
+    this.roles = new KettuGuildConfigRoles(this.client, null, this.guild);
 
     /**
      * Automod configuration for the guild
      * @type {?KettuGuildConfigAutomod}
      * @name KettuGuildConfig#automod
      */
-    this.social = new KettuGuildConfigSocial(this.client, this.guild, {});
+    this.social = new KettuGuildConfigSocial(this.client, null, this.guild);
 
     if (!data) return;
 
