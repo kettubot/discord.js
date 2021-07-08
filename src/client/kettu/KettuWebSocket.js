@@ -4,7 +4,7 @@ const EventEmitter = require('events');
 const PacketHandlers = require('./handlers');
 const WebSocket = require('../../WebSocket');
 const { Error: DJSError } = require('../../errors/DJSError');
-const { Status, KettuEvents, KettuOPCodes, KettuWSEvents, ShardEvents } = require('../../util/Constants');
+const { Status, KettuEvents, KettuOpcodes, KettuWSEvents, ShardEvents } = require('../../util/Constants');
 const KettuIntents = require('../../util/KettuIntents');
 
 const STATUS_KEYS = Object.keys(Status);
@@ -249,7 +249,7 @@ class KettuWebSocket extends EventEmitter {
     try {
       packet = WebSocket.unpack(data);
       this.client.emit(KettuEvents.RAW, packet, this.id);
-      if (packet.op === KettuOPCodes.DISPATCH) this.emit(packet.t, packet.d, this.id);
+      if (packet.op === KettuOpcodes.DISPATCH) this.emit(packet.t, packet.d, this.id);
     } catch (err) {
       this.client.emit(KettuEvents.ERROR, err, this.id);
       return;
@@ -367,16 +367,16 @@ class KettuWebSocket extends EventEmitter {
     if (packet.s > this.sequence) this.sequence = packet.s;
 
     switch (packet.op) {
-      case KettuOPCodes.HELLO:
+      case KettuOpcodes.HELLO:
         this.setHelloTimeout(-1);
         this.setHeartbeatTimer(packet.d.heartbeat_interval);
         this.identify();
         break;
-      case KettuOPCodes.RECONNECT:
+      case KettuOpcodes.RECONNECT:
         this.debug('[RECONNECT] kAPI asked us to reconnect');
         this.destroy({ closeCode: 4000 });
         break;
-      case KettuOPCodes.INVALID_SESSION:
+      case KettuOpcodes.INVALID_SESSION:
         this.debug(`[INVALID SESSION] Not resumable`);
         // Reset the sequence
         this.sequence = -1;
@@ -387,10 +387,10 @@ class KettuWebSocket extends EventEmitter {
         // Finally, emit the INVALID_SESSION event
         this.emit(ShardEvents.INVALID_SESSION);
         break;
-      case KettuOPCodes.HEARTBEAT_ACK:
+      case KettuOpcodes.HEARTBEAT_ACK:
         this.ackHeartbeat();
         break;
-      case KettuOPCodes.HEARTBEAT:
+      case KettuOpcodes.HEARTBEAT:
         if (packet.a) this.ackHeartbeat();
         else this.sendHeartbeat('HeartbeatRequest', true);
         break;
@@ -469,7 +469,7 @@ class KettuWebSocket extends EventEmitter {
     this.debug(`[${tag}] Sending a heartbeat.`);
     this.lastHeartbeatAcked = false;
     this.lastPingTimestamp = Date.now();
-    this.send({ op: KettuOPCodes.HEARTBEAT, d: this.sequence }, true);
+    this.send({ op: KettuOpcodes.HEARTBEAT, d: this.sequence }, true);
   }
 
   /**
@@ -515,7 +515,7 @@ class KettuWebSocket extends EventEmitter {
     };
 
     this.debug(`[KETTU IDENTIFYING...]`);
-    this.send({ op: KettuOPCodes.IDENTIFY, d }, true);
+    this.send({ op: KettuOpcodes.IDENTIFY, d }, true);
   }
 
   /**
@@ -539,7 +539,7 @@ class KettuWebSocket extends EventEmitter {
       seq: this.closeSequence,
     };
 
-    this.send({ op: KettuOPCodes.RESUME, d }, true);
+    this.send({ op: KettuOpcodes.RESUME, d }, true);
   }
 
   /**

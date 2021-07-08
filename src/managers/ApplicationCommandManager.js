@@ -1,17 +1,24 @@
 'use strict';
 
-const BaseManager = require('./BaseManager');
+const ApplicationCommandPermissionsManager = require('./ApplicationCommandPermissionsManager');
+const CachedManager = require('./CachedManager');
 const { TypeError } = require('../errors');
 const ApplicationCommand = require('../structures/ApplicationCommand');
 const Collection = require('../util/Collection');
 
 /**
  * Manages API methods for application commands and stores their cache.
- * @extends {BaseManager}
+ * @extends {CachedManager}
  */
-class ApplicationCommandManager extends BaseManager {
+class ApplicationCommandManager extends CachedManager {
   constructor(client, iterable) {
-    super(client, iterable, ApplicationCommand);
+    super(client, ApplicationCommand, iterable);
+
+    /**
+     * The manager for permissions of arbitrary commands on arbitrary guilds
+     * @type {ApplicationCommandPermissionsManager}
+     */
+    this.permissions = new ApplicationCommandPermissionsManager(this);
   }
 
   /**
@@ -20,20 +27,22 @@ class ApplicationCommandManager extends BaseManager {
    * @name ApplicationCommandManager#cache
    */
 
-  add(data, cache) {
-    return super.add(data, cache, { extras: [this.guild] });
+  add(data, cache, guildId) {
+    return super.add(data, cache, { extras: [this.guild, guildId] });
   }
 
   /**
    * The APIRouter path to the commands
-   * @type {Object}
-   * @readonly
+   * @param {Snowflake} [options.id] The application command's id
+   * @param {Snowflake} [options.guildId] The guild's id to use in the path,
+   * ignored when using a {@link GuildApplicationCommandManager}
+   * @returns {Object}
    * @private
    */
-  get commandPath() {
+  commandPath({ id, guildId } = {}) {
     let path = this.client.api.applications(this.client.application.id);
-    if (this.guild) path = path.guilds(this.guild.id);
-    return path.commands;
+    if (this.guild ?? guildId) path = path.guilds(this.guild?.id ?? guildId);
+    return id ? path.commands(id) : path.commands;
   }
 
   /**
@@ -44,10 +53,22 @@ class ApplicationCommandManager extends BaseManager {
    */
 
   /**
+   * Options used to fetch data from discord
+   * @typedef {Object} BaseFetchOptions
+   * @property {boolean} [cache=true] Whether to cache the fetched data if it wasn't already
+   * @property {boolean} [force=false] Whether to skip the cache check and request the API
+   */
+
+  /**
+   * Options used to fetch Application Commands from discord
+   * @typedef {BaseFetchOptions} FetchApplicationCommandOptions
+   * @property {Snowflake} [guildId] The guild's id to fetch commands for, for when the guild is not cached
+   */
+
+  /**
    * Obtains one or multiple application commands from Discord, or the cache if it's already available.
-   * @param {Snowflake} [id] ID of the application command
-   * @param {boolean} [cache=true] Whether to cache the new application commands if they weren't already
-   * @param {boolean} [force=false] Whether to skip the cache check and request the API
+   * @param {Snowflake} [id] The application command's id
+   * @param {FetchApplicationCommandOptions} [options] Additional options for this fetch
    * @returns {Promise<ApplicationCommand|Collection<Snowflake, ApplicationCommand>>}
    * @example
    * // Fetch a single command
@@ -60,23 +81,27 @@ class ApplicationCommandManager extends BaseManager {
    *   .then(commands => console.log(`Fetched ${commands.size} commands`))
    *   .catch(console.error);
    */
-  async fetch(id, cache = true, force = false) {
-    if (id) {
+  async fetch(id, { guildId, cache = true, force = false } = {}) {
+    if (typeof id === 'object') {
+      ({ guildId, cache = true } = id);
+    } else if (id) {
       if (!force) {
         const existing = this.cache.get(id);
         if (existing) return existing;
       }
-      const command = await this.commandPath(id).get();
+      const command = await this.commandPath({ id, guildId }).get();
       return this.add(command, cache);
     }
 
-    const data = await this.commandPath.get();
-    return data.reduce((coll, command) => coll.set(command.id, this.add(command, cache)), new Collection());
+    const data = await this.commandPath({ guildId }).get();
+    return data.reduce((coll, command) => coll.set(command.id, this.add(command, cache, guildId)), new Collection());
   }
 
   /**
    * Creates an application command.
    * @param {ApplicationCommandData} command The command
+   * @param {Snowflake} [guildId] The guild's id to create this command in,
+   * ignored when using a {@link GuildApplicationCommandManager}
    * @returns {Promise<ApplicationCommand>}
    * @example
    * // Create a new command
@@ -87,16 +112,18 @@ class ApplicationCommandManager extends BaseManager {
    *   .then(console.log)
    *   .catch(console.error);
    */
-  async create(command) {
-    const data = await this.commandPath.post({
+  async create(command, guildId) {
+    const data = await this.commandPath({ guildId }).post({
       data: this.constructor.transformCommand(command),
     });
-    return this.add(data);
+    return this.add(data, undefined, guildId);
   }
 
   /**
    * Sets all the commands for this application or guild.
    * @param {ApplicationCommandData[]} commands The commands
+   * @param {Snowflake} [guildId] The guild's id to create the commands in,
+   * ignored when using a {@link GuildApplicationCommandManager}
    * @returns {Promise<Collection<Snowflake, ApplicationCommand>>}
    * @example
    * // Set all commands to just this one
@@ -114,17 +141,22 @@ class ApplicationCommandManager extends BaseManager {
    *   .then(console.log)
    *   .catch(console.error);
    */
-  async set(commands) {
-    const data = await this.commandPath.put({
+  async set(commands, guildId) {
+    const data = await this.commandPath({ guildId }).put({
       data: commands.map(c => this.constructor.transformCommand(c)),
     });
-    return data.reduce((coll, command) => coll.set(command.id, this.add(command)), new Collection());
+    return data.reduce(
+      (coll, command) => coll.set(command.id, this.add(command, undefined, guildId)),
+      new Collection(),
+    );
   }
 
   /**
    * Edits an application command.
    * @param {ApplicationCommandResolvable} command The command to edit
    * @param {ApplicationCommandData} data The data to update the command with
+   * @param {Snowflake} [guildId] The guild's id where the command registered,
+   * ignored when using a {@link GuildApplicationCommandManager}
    * @returns {Promise<ApplicationCommand>}
    * @example
    * // Edit an existing command
@@ -134,17 +166,19 @@ class ApplicationCommandManager extends BaseManager {
    *   .then(console.log)
    *   .catch(console.error);
    */
-  async edit(command, data) {
-    const id = this.resolveID(command);
+  async edit(command, data, guildId) {
+    const id = this.resolveId(command);
     if (!id) throw new TypeError('INVALID_TYPE', 'command', 'ApplicationCommandResolvable');
 
-    const patched = await this.commandPath(id).patch({ data: this.constructor.transformCommand(data) });
-    return this.add(patched);
+    const patched = await this.commandPath({ id, guildId }).patch({ data: this.constructor.transformCommand(data) });
+    return this.add(patched, undefined, guildId);
   }
 
   /**
    * Deletes an application command.
    * @param {ApplicationCommandResolvable} command The command to delete
+   * @param {Snowflake} [guildId] The guild's id where the command is registered,
+   * ignored when using a {@link GuildApplicationCommandManager}
    * @returns {Promise<?ApplicationCommand>}
    * @example
    * // Delete a command
@@ -152,11 +186,11 @@ class ApplicationCommandManager extends BaseManager {
    *   .then(console.log)
    *   .catch(console.error);
    */
-  async delete(command) {
-    const id = this.resolveID(command);
+  async delete(command, guildId) {
+    const id = this.resolveId(command);
     if (!id) throw new TypeError('INVALID_TYPE', 'command', 'ApplicationCommandResolvable');
 
-    await this.commandPath(id).delete();
+    await this.commandPath({ id, guildId }).delete();
 
     const cached = this.cache.get(id);
     this.cache.delete(id);
@@ -166,7 +200,7 @@ class ApplicationCommandManager extends BaseManager {
   /**
    * Transforms an {@link ApplicationCommandData} object into something that can be used with the API.
    * @param {ApplicationCommandData} command The command to transform
-   * @returns {Object}
+   * @returns {APIApplicationCommand}
    * @private
    */
   static transformCommand(command) {

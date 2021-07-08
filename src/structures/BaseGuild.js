@@ -4,15 +4,16 @@ const Base = require('./Base');
 const SnowflakeUtil = require('../util/SnowflakeUtil');
 
 /**
- * The base class for {@link Guild} and {@link OAuth2Guild}.
+ * The base class for {@link Guild}, {@link OAuth2Guild} and {@link InviteGuild}.
  * @extends {Base}
+ * @abstract
  */
 class BaseGuild extends Base {
   constructor(client, data) {
     super(client);
 
     /**
-     * The ID of this guild
+     * The guild's id
      * @type {Snowflake}
      */
     this.id = data.id;
