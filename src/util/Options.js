@@ -88,6 +88,14 @@
  */
 
 /**
+ * KettuClient options
+ * @typedef {Object} KettuClientOptions
+ * @property {number} [version=4] API version to use
+ * @property {string} [api='https://api.kettu.cc'] Base url of the API
+ * @property {KettuIntents} [intents=127] Required intents
+ */
+
+/**
  * Contains various utilities for client options.
  */
 class Options extends null {
@@ -127,6 +135,12 @@ class Options extends null {
         cdn: 'https://cdn.discordapp.com',
         invite: 'https://discord.gg',
         template: 'https://discord.new',
+      },
+      kettu: false,
+      kettuOptions: {
+        version: 4,
+        api: 'https://api.kettu.cc',
+        intents: 127,
       },
     };
   }
