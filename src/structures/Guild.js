@@ -1,32 +1,34 @@
 'use strict';
 
-const BaseGuild = require('./BaseGuild');
+const AnonymousGuild = require('./AnonymousGuild');
 const GuildAuditLogs = require('./GuildAuditLogs');
 const GuildPreview = require('./GuildPreview');
 const GuildTemplate = require('./GuildTemplate');
 const Integration = require('./Integration');
-const Invite = require('./Invite');
 const KettuGuild = require('./KettuGuild');
-const VoiceRegion = require('./VoiceRegion');
 const Webhook = require('./Webhook');
+const WelcomeScreen = require('./WelcomeScreen');
 const { Error, TypeError } = require('../errors');
 const GuildApplicationCommandManager = require('../managers/GuildApplicationCommandManager');
 const GuildBanManager = require('../managers/GuildBanManager');
 const GuildChannelManager = require('../managers/GuildChannelManager');
 const GuildEmojiManager = require('../managers/GuildEmojiManager');
+const GuildInviteManager = require('../managers/GuildInviteManager');
 const GuildMemberManager = require('../managers/GuildMemberManager');
 const PresenceManager = require('../managers/PresenceManager');
 const RoleManager = require('../managers/RoleManager');
+const StageInstanceManager = require('../managers/StageInstanceManager');
 const VoiceStateManager = require('../managers/VoiceStateManager');
 const Collection = require('../util/Collection');
 const {
   ChannelTypes,
-  DefaultMessageNotifications,
+  DefaultMessageNotificationLevels,
   PartialTypes,
   VerificationLevels,
   ExplicitContentFilterLevels,
-  NSFWLevels,
   Status,
+  MFALevels,
+  PremiumTiers,
 } = require('../util/Constants');
 const DataResolver = require('../util/DataResolver');
 const SystemChannelFlags = require('../util/SystemChannelFlags');
@@ -36,11 +38,11 @@ const Util = require('../util/Util');
  * Represents a guild (or a server) on Discord.
  * <info>It's recommended to see if a guild is available before performing operations or reading data from it. You can
  * check this with `guild.available`.</info>
- * @extends {BaseGuild}
+ * @extends {AnonymousGuild}
  */
-class Guild extends BaseGuild {
+class Guild extends AnonymousGuild {
   constructor(client, data) {
-    super(client, data);
+    super(client, data, false);
 
     /**
      * A manager of the application commands belonging to this guild
@@ -85,6 +87,18 @@ class Guild extends BaseGuild {
     this.voiceStates = new VoiceStateManager(this);
 
     /**
+     * A manager of the stage instances of this guild
+     * @type {StageInstanceManager}
+     */
+    this.stageInstances = new StageInstanceManager(this);
+
+    /**
+     * A manager of the invites of this guild
+     * @type {GuildInviteManager}
+     */
+    this.invites = new GuildInviteManager(this);
+
+    /**
      * Whether the bot has been removed from the guild
      * @type {boolean}
      */
@@ -108,14 +122,6 @@ class Guild extends BaseGuild {
      */
     this.shardID = data.shardID;
 
-    if ('nsfw' in data) {
-      /**
-       * Whether the guild is designated as not safe for work
-       * @type {boolean}
-       */
-      this.nsfw = data.nsfw;
-    }
-
     if (this.client.options.kettu) {
       /**
        * Interfaces with Kettu's configuration for a specific guild.
@@ -132,7 +138,7 @@ class Guild extends BaseGuild {
    * @readonly
    */
   get shard() {
-    return this.client.ws.shards.get(this.shardID);
+    return this.client.ws.shards.get(this.shardId);
   }
 
   /**
@@ -141,17 +147,11 @@ class Guild extends BaseGuild {
    * @private
    */
   _patch(data) {
+    super._patch(data);
     this.id = data.id;
     this.name = data.name;
     this.icon = data.icon;
-    this.features = data.features;
     this.available = !data.unavailable;
-
-    /**
-     * The hash of the guild invite splash image
-     * @type {?string}
-     */
-    this.splash = data.splash;
 
     /**
      * The hash of the guild discovery splash image
@@ -160,30 +160,16 @@ class Guild extends BaseGuild {
     this.discoverySplash = data.discovery_splash;
 
     /**
-     * The region the guild is located in
-     * @type {string}
-     */
-    this.region = data.region;
-
-    /**
      * The full amount of members in this guild
      * @type {number}
      */
-    this.memberCount = data.member_count || this.memberCount;
-
-    if ('nsfw_level' in data) {
-      /**
-       * The NSFW level of this guild
-       * @type {NSFWLevel}
-       */
-      this.nsfwLevel = NSFWLevels[data.nsfw_level];
-    }
+    this.memberCount = data.member_count ?? this.memberCount;
 
     /**
      * Whether the guild is "large" (has more than large_threshold members, 50 by default)
      * @type {boolean}
      */
-    this.large = Boolean('large' in data ? data.large : this.large);
+    this.large = Boolean(data.large ?? this.large);
 
     /**
      * An array of enabled guild features, here are the possible values:
@@ -200,7 +186,10 @@ class Guild extends BaseGuild {
      * * NEWS
      * * PARTNERED
      * * PREVIEW_ENABLED
+     * * PRIVATE_THREADS
      * * RELAY_ENABLED
+     * * SEVEN_DAY_THREAD_ARCHIVE
+     * * THREE_DAY_THREAD_ARCHIVE
      * * TICKETED_EVENTS_ENABLED
      * * VANITY_URL
      * * VERIFIED
@@ -210,10 +199,10 @@ class Guild extends BaseGuild {
      */
 
     /**
-     * The ID of the application that created this guild (if applicable)
+     * The id of the application that created this guild (if applicable)
      * @type {?Snowflake}
      */
-    this.applicationID = data.application_id;
+    this.applicationId = data.application_id;
 
     /**
      * The time in seconds before a user is counted as "away from keyboard"
@@ -222,31 +211,22 @@ class Guild extends BaseGuild {
     this.afkTimeout = data.afk_timeout;
 
     /**
-     * The ID of the voice channel where AFK members are moved
+     * The id of the voice channel where AFK members are moved
      * @type {?Snowflake}
      */
-    this.afkChannelID = data.afk_channel_id;
+    this.afkChannelId = data.afk_channel_id;
 
     /**
-     * The ID of the system channel
+     * The system channel's id
      * @type {?Snowflake}
      */
-    this.systemChannelID = data.system_channel_id;
+    this.systemChannelId = data.system_channel_id;
 
     /**
-     * The type of premium tier:
-     * * 0: NONE
-     * * 1: TIER_1
-     * * 2: TIER_2
-     * * 3: TIER_3
-     * @typedef {number} PremiumTier
-     */
-
-    /**
-     * The premium tier on this guild
+     * The premium tier of this guild
      * @type {PremiumTier}
      */
-    this.premiumTier = data.premium_tier;
+    this.premiumTier = PremiumTiers[data.premium_tier];
 
     if (typeof data.premium_subscription_count !== 'undefined') {
       /**
@@ -266,17 +246,11 @@ class Guild extends BaseGuild {
 
     if (typeof data.widget_channel_id !== 'undefined') {
       /**
-       * The widget channel ID, if enabled
+       * The widget channel's id, if enabled
        * @type {?string}
        */
-      this.widgetChannelID = data.widget_channel_id;
+      this.widgetChannelId = data.widget_channel_id;
     }
-
-    /**
-     * The verification level of the guild
-     * @type {VerificationLevel}
-     */
-    this.verificationLevel = VerificationLevels[data.verification_level];
 
     /**
      * The explicit content filter level of the guild
@@ -285,10 +259,10 @@ class Guild extends BaseGuild {
     this.explicitContentFilter = ExplicitContentFilterLevels[data.explicit_content_filter];
 
     /**
-     * The required MFA level for the guild
-     * @type {number}
+     * The required MFA level for this guild
+     * @type {MFALevel}
      */
-    this.mfaLevel = data.mfa_level;
+    this.mfaLevel = MFALevels[data.mfa_level];
 
     /**
      * The timestamp the client user joined the guild at
@@ -297,11 +271,10 @@ class Guild extends BaseGuild {
     this.joinedTimestamp = data.joined_at ? new Date(data.joined_at).getTime() : this.joinedTimestamp;
 
     /**
-     * The value set for the guild's default message notifications
-     * @type {DefaultMessageNotifications|number}
+     * The default message notification level of the guild
+     * @type {DefaultMessageNotificationLevel}
      */
-    this.defaultMessageNotifications =
-      DefaultMessageNotifications[data.default_message_notifications] || data.default_message_notifications;
+    this.defaultMessageNotifications = DefaultMessageNotificationLevels[data.default_message_notifications];
 
     /**
      * The value set for the guild's system channel flags
@@ -325,7 +298,7 @@ class Guild extends BaseGuild {
        * <info>You will need to fetch the guild using {@link Guild#fetch} if you want to receive this parameter</info>
        * @type {?number}
        */
-      this.maximumPresences = data.max_presences || 25000;
+      this.maximumPresences = data.max_presences ?? 25000;
     } else if (typeof this.maximumPresences === 'undefined') {
       this.maximumPresences = null;
     }
@@ -353,12 +326,6 @@ class Guild extends BaseGuild {
     }
 
     /**
-     * The vanity invite code of the guild, if any
-     * @type {?string}
-     */
-    this.vanityURLCode = data.vanity_url_code;
-
-    /**
      * The use count of the vanity URL code of the guild, if any
      * <info>You will need to fetch this parameter using {@link Guild#fetchVanityData} if you want to receive it</info>
      * @type {?number}
@@ -366,28 +333,16 @@ class Guild extends BaseGuild {
     this.vanityURLUses = null;
 
     /**
-     * The description of the guild, if any
-     * @type {?string}
-     */
-    this.description = data.description;
-
-    /**
-     * The hash of the guild banner
-     * @type {?string}
-     */
-    this.banner = data.banner;
-
-    /**
-     * The ID of the rules channel for the guild
+     * The rules channel's id for the guild
      * @type {?Snowflake}
      */
-    this.rulesChannelID = data.rules_channel_id;
+    this.rulesChannelId = data.rules_channel_id;
 
     /**
-     * The ID of the community updates channel for the guild
+     * The community updates channel's id for the guild
      * @type {?Snowflake}
      */
-    this.publicUpdatesChannelID = data.public_updates_channel_id;
+    this.publicUpdatesChannelId = data.public_updates_channel_id;
 
     /**
      * The preferred locale of the guild, defaults to `en-US`
@@ -399,6 +354,12 @@ class Guild extends BaseGuild {
       this.channels.cache.clear();
       for (const rawChannel of data.channels) {
         this.client.channels.add(rawChannel, this);
+      }
+    }
+
+    if (data.threads) {
+      for (const rawThread of data.threads) {
+        this.client.channels.add(rawThread, this);
       }
     }
 
@@ -414,15 +375,22 @@ class Guild extends BaseGuild {
 
     if (data.owner_id) {
       /**
-       * The user ID of this guild's owner
+       * The user id of this guild's owner
        * @type {Snowflake}
        */
-      this.ownerID = data.owner_id;
+      this.ownerId = data.owner_id;
     }
 
     if (data.presences) {
       for (const presence of data.presences) {
         this.presences.add(Object.assign(presence, { guild: this }));
+      }
+    }
+
+    if (data.stage_instances) {
+      this.stageInstances.cache.clear();
+      for (const stageInstance of data.stage_instances) {
+        this.stageInstances.add(stageInstance);
       }
     }
 
@@ -450,12 +418,11 @@ class Guild extends BaseGuild {
 
   /**
    * The URL to this guild's banner.
-   * @param {ImageURLOptions} [options={}] Options for the Image URL
+   * @param {StaticImageURLOptions} [options={}] Options for the Image URL
    * @returns {?string}
    */
   bannerURL({ format, size } = {}) {
-    if (!this.banner) return null;
-    return this.client.rest.cdn.Banner(this.id, this.banner, format, size);
+    return this.banner && this.client.rest.cdn.Banner(this.id, this.banner, format, size);
   }
 
   /**
@@ -469,22 +436,20 @@ class Guild extends BaseGuild {
 
   /**
    * The URL to this guild's invite splash image.
-   * @param {ImageURLOptions} [options={}] Options for the Image URL
+   * @param {StaticImageURLOptions} [options={}] Options for the Image URL
    * @returns {?string}
    */
   splashURL({ format, size } = {}) {
-    if (!this.splash) return null;
-    return this.client.rest.cdn.Splash(this.id, this.splash, format, size);
+    return this.splash && this.client.rest.cdn.Splash(this.id, this.splash, format, size);
   }
 
   /**
    * The URL to this guild's discovery splash image.
-   * @param {ImageURLOptions} [options={}] Options for the Image URL
+   * @param {StaticImageURLOptions} [options={}] Options for the Image URL
    * @returns {?string}
    */
   discoverySplashURL({ format, size } = {}) {
-    if (!this.discoverySplash) return null;
-    return this.client.rest.cdn.DiscoverySplash(this.id, this.discoverySplash, format, size);
+    return this.discoverySplash && this.client.rest.cdn.DiscoverySplash(this.id, this.discoverySplash, format, size);
   }
 
   /**
@@ -496,12 +461,12 @@ class Guild extends BaseGuild {
 
   /**
    * Fetches the owner of the guild.
-   * If the member object isn't needed, use {@link Guild#ownerID} instead.
+   * If the member object isn't needed, use {@link Guild#ownerId} instead.
    * @param {FetchOwnerOptions} [options] The options for fetching the member
    * @returns {Promise<GuildMember>}
    */
   fetchOwner(options) {
-    return this.members.fetch({ ...options, user: this.ownerID });
+    return this.members.fetch({ ...options, user: this.ownerId });
   }
 
   /**
@@ -510,7 +475,7 @@ class Guild extends BaseGuild {
    * @readonly
    */
   get afkChannel() {
-    return this.client.channels.cache.get(this.afkChannelID) || null;
+    return this.client.channels.resolve(this.afkChannelId);
   }
 
   /**
@@ -519,7 +484,7 @@ class Guild extends BaseGuild {
    * @readonly
    */
   get systemChannel() {
-    return this.client.channels.cache.get(this.systemChannelID) || null;
+    return this.client.channels.resolve(this.systemChannelId);
   }
 
   /**
@@ -528,7 +493,7 @@ class Guild extends BaseGuild {
    * @readonly
    */
   get widgetChannel() {
-    return this.client.channels.cache.get(this.widgetChannelID) || null;
+    return this.client.channels.resolve(this.widgetChannelId);
   }
 
   /**
@@ -537,7 +502,7 @@ class Guild extends BaseGuild {
    * @readonly
    */
   get rulesChannel() {
-    return this.client.channels.cache.get(this.rulesChannelID) || null;
+    return this.client.channels.resolve(this.rulesChannelId);
   }
 
   /**
@@ -546,7 +511,7 @@ class Guild extends BaseGuild {
    * @readonly
    */
   get publicUpdatesChannel() {
-    return this.client.channels.cache.get(this.publicUpdatesChannelID) || null;
+    return this.client.channels.resolve(this.publicUpdatesChannelId);
   }
 
   /**
@@ -556,7 +521,7 @@ class Guild extends BaseGuild {
    */
   get me() {
     return (
-      this.members.cache.get(this.client.user.id) ||
+      this.members.resolve(this.client.user.id) ??
       (this.client.options.partials.includes(PartialTypes.GUILD_MEMBER)
         ? this.members.add({ user: { id: this.client.user.id } }, true)
         : null)
@@ -596,6 +561,15 @@ class Guild extends BaseGuild {
   }
 
   /**
+   * Fetches the welcome screen for this guild.
+   * @returns {Promise<WelcomeScreen>}
+   */
+  async fetchWelcomeScreen() {
+    const data = await this.client.api.guilds(this.id, 'welcome-screen').get();
+    return new WelcomeScreen(this, data);
+  }
+
+  /**
    * The data for creating an integration.
    * @typedef {Object} IntegrationData
    * @property {string} id The integration id
@@ -626,35 +600,6 @@ class Guild extends BaseGuild {
       .guilds(this.id)
       .templates.post({ data: { name, description } })
       .then(data => new GuildTemplate(this.client, data));
-  }
-
-  /**
-   * Fetches a collection of invites to this guild.
-   * Resolves with a collection mapping invites by their codes.
-   * @returns {Promise<Collection<string, Invite>>}
-   * @example
-   * // Fetch invites
-   * guild.fetchInvites()
-   *   .then(invites => console.log(`Fetched ${invites.size} invites`))
-   *   .catch(console.error);
-   * @example
-   * // Fetch invite creator by their id
-   * guild.fetchInvites()
-   *  .then(invites => console.log(invites.find(invite => invite.inviter.id === '84484653687267328')))
-   *  .catch(console.error);
-   */
-  fetchInvites() {
-    return this.client.api
-      .guilds(this.id)
-      .invites.get()
-      .then(inviteItems => {
-        const invites = new Collection();
-        for (const inviteItem of inviteItems) {
-          const invite = new Invite(this.client, inviteItem);
-          invites.set(invite.code, invite);
-        }
-        return invites;
-      });
   }
 
   /**
@@ -719,21 +664,6 @@ class Guild extends BaseGuild {
   }
 
   /**
-   * Fetches available voice regions.
-   * @returns {Promise<Collection<string, VoiceRegion>>}
-   */
-  fetchVoiceRegions() {
-    return this.client.api
-      .guilds(this.id)
-      .regions.get()
-      .then(res => {
-        const regions = new Collection();
-        for (const region of res) regions.set(region.id, new VoiceRegion(region));
-        return regions;
-      });
-  }
-
-  /**
    * Data for the Guild Widget object
    * @typedef {Object} GuildWidget
    * @property {boolean} enabled Whether the widget is enabled
@@ -759,7 +689,7 @@ class Guild extends BaseGuild {
   async fetchWidget() {
     const data = await this.client.api.guilds(this.id).widget.get();
     this.widgetEnabled = data.enabled;
-    this.widgetChannelID = data.channel_id;
+    this.widgetChannelId = data.channel_id;
     return {
       enabled: data.enabled,
       channel: data.channel_id ? this.channels.cache.get(data.channel_id) : null,
@@ -767,12 +697,17 @@ class Guild extends BaseGuild {
   }
 
   /**
+   * Options used to fetch audit logs.
+   * @typedef {Object} GuildAuditLogsFetchOptions
+   * @property {Snowflake|GuildAuditLogsEntry} [before] Only return entries before this entry
+   * @property {number} [limit] The number of entries to return
+   * @property {UserResolvable} [user] Only return entries for actions made by this user
+   * @property {AuditLogAction|number} [type] Only return entries for this action type
+   */
+
+  /**
    * Fetches audit logs for this guild.
-   * @param {Object} [options={}] Options for fetching audit logs
-   * @param {Snowflake|GuildAuditLogsEntry} [options.before] Limit to entries from before specified entry
-   * @param {number} [options.limit] Limit number of entries
-   * @param {UserResolvable} [options.user] Only show entries involving this user
-   * @param {AuditLogAction|number} [options.type] Only show entries involving this action type
+   * @param {GuildAuditLogsFetchOptions} [options={}] Options for fetching audit logs
    * @returns {Promise<GuildAuditLogs>}
    * @example
    * // Output audit log entries
@@ -790,7 +725,7 @@ class Guild extends BaseGuild {
         query: {
           before: options.before,
           limit: options.limit,
-          user_id: this.client.users.resolveID(options.user),
+          user_id: this.client.users.resolveId(options.user),
           action_type: options.type,
         },
       })
@@ -798,20 +733,25 @@ class Guild extends BaseGuild {
   }
 
   /**
-   * Adds a user to the guild using OAuth2. Requires the `CREATE_INSTANT_INVITE` permission.
-   * @param {UserResolvable} user User to add to the guild
-   * @param {Object} options Options for the addition
-   * @param {string} options.accessToken An OAuth2 access token for the user with the `guilds.join` scope granted to the
+   * Options used to add a user to a guild using OAuth2.
+   * @typedef {Object} AddGuildMemberOptions
+   * @property {string} accessToken An OAuth2 access token for the user with the `guilds.join` scope granted to the
    * bot's application
-   * @param {string} [options.nick] Nickname to give the member (requires `MANAGE_NICKNAMES`)
-   * @param {Collection<Snowflake, Role>|RoleResolvable[]} [options.roles] Roles to add to the member
+   * @property {string} [nick] The nickname to give to the member (requires `MANAGE_NICKNAMES`)
+   * @property {Collection<Snowflake, Role>|RoleResolvable[]} [roles] The roles to add to the member
    * (requires `MANAGE_ROLES`)
-   * @param {boolean} [options.mute] Whether the member should be muted (requires `MUTE_MEMBERS`)
-   * @param {boolean} [options.deaf] Whether the member should be deafened (requires `DEAFEN_MEMBERS`)
+   * @property {boolean} [mute] Whether the member should be muted (requires `MUTE_MEMBERS`)
+   * @property {boolean} [deaf] Whether the member should be deafened (requires `DEAFEN_MEMBERS`)
+   */
+
+  /**
+   * Adds a user to the guild using OAuth2. Requires the `CREATE_INSTANT_INVITE` permission.
+   * @param {UserResolvable} user The user to add to the guild
+   * @param {AddGuildMemberOptions} options Options for adding the user to the guild
    * @returns {Promise<GuildMember>}
    */
   async addMember(user, options) {
-    user = this.client.users.resolveID(user);
+    user = this.client.users.resolveId(user);
     if (!user) throw new TypeError('INVALID_TYPE', 'user', 'UserResolvable');
     if (this.members.cache.has(user)) return this.members.cache.get(user);
     options.access_token = options.accessToken;
@@ -821,7 +761,7 @@ class Guild extends BaseGuild {
       }
       const resolvedRoles = [];
       for (const role of options.roles.values()) {
-        const resolvedRole = this.roles.resolveID(role);
+        const resolvedRole = this.roles.resolveId(role);
         if (!role) throw new TypeError('INVALID_ELEMENT', 'Array or Collection', 'options.roles', role);
         resolvedRoles.push(resolvedRole);
       }
@@ -836,7 +776,6 @@ class Guild extends BaseGuild {
    * The data for editing a guild.
    * @typedef {Object} GuildEditData
    * @property {string} [name] The name of the guild
-   * @property {string} [region] The region of the guild
    * @property {VerificationLevel|number} [verificationLevel] The verification level of the guild
    * @property {ExplicitContentFilterLevel|number} [explicitContentFilter] The level of the explicit content filter
    * @property {ChannelResolvable} [afkChannel] The AFK channel of the guild
@@ -847,7 +786,8 @@ class Guild extends BaseGuild {
    * @property {Base64Resolvable} [splash] The invite splash image of the guild
    * @property {Base64Resolvable} [discoverySplash] The discovery splash image of the guild
    * @property {Base64Resolvable} [banner] The banner of the guild
-   * @property {DefaultMessageNotifications|number} [defaultMessageNotifications] The default message notifications
+   * @property {DefaultMessageNotificationLevel|number} [defaultMessageNotifications] The default message notification
+   * level of the guild
    * @property {SystemChannelFlagsResolvable} [systemChannelFlags] The system channel flags of the guild
    * @property {ChannelResolvable} [rulesChannel] The rules channel of the guild
    * @property {ChannelResolvable} [publicUpdatesChannel] The community updates channel of the guild
@@ -862,33 +802,31 @@ class Guild extends BaseGuild {
    * @param {string} [reason] Reason for editing this guild
    * @returns {Promise<Guild>}
    * @example
-   * // Set the guild name and region
+   * // Set the guild name
    * guild.edit({
    *   name: 'Discord Guild',
-   *   region: 'london',
    * })
-   *   .then(updated => console.log(`New guild name ${updated} in region ${updated.region}`))
+   *   .then(updated => console.log(`New guild name ${updated}`))
    *   .catch(console.error);
    */
   edit(data, reason) {
     const _data = {};
     if (data.name) _data.name = data.name;
-    if (data.region) _data.region = data.region;
     if (typeof data.verificationLevel !== 'undefined') {
       _data.verification_level =
         typeof data.verificationLevel === 'number'
-          ? Number(data.verificationLevel)
-          : VerificationLevels.indexOf(data.verificationLevel);
+          ? data.verificationLevel
+          : VerificationLevels[data.verificationLevel];
     }
     if (typeof data.afkChannel !== 'undefined') {
-      _data.afk_channel_id = this.client.channels.resolveID(data.afkChannel);
+      _data.afk_channel_id = this.client.channels.resolveId(data.afkChannel);
     }
     if (typeof data.systemChannel !== 'undefined') {
-      _data.system_channel_id = this.client.channels.resolveID(data.systemChannel);
+      _data.system_channel_id = this.client.channels.resolveId(data.systemChannel);
     }
     if (data.afkTimeout) _data.afk_timeout = Number(data.afkTimeout);
     if (typeof data.icon !== 'undefined') _data.icon = data.icon;
-    if (data.owner) _data.owner_id = this.client.users.resolveID(data.owner);
+    if (data.owner) _data.owner_id = this.client.users.resolveId(data.owner);
     if (data.splash) _data.splash = data.splash;
     if (data.discoverySplash) _data.discovery_splash = data.discoverySplash;
     if (data.banner) _data.banner = data.banner;
@@ -896,22 +834,22 @@ class Guild extends BaseGuild {
       _data.explicit_content_filter =
         typeof data.explicitContentFilter === 'number'
           ? data.explicitContentFilter
-          : ExplicitContentFilterLevels.indexOf(data.explicitContentFilter);
+          : ExplicitContentFilterLevels[data.explicitContentFilter];
     }
     if (typeof data.defaultMessageNotifications !== 'undefined') {
       _data.default_message_notifications =
-        typeof data.defaultMessageNotifications === 'string'
-          ? DefaultMessageNotifications.indexOf(data.defaultMessageNotifications)
-          : data.defaultMessageNotifications;
+        typeof data.defaultMessageNotifications === 'number'
+          ? data.defaultMessageNotifications
+          : DefaultMessageNotificationLevels[data.defaultMessageNotifications];
     }
     if (typeof data.systemChannelFlags !== 'undefined') {
       _data.system_channel_flags = SystemChannelFlags.resolve(data.systemChannelFlags);
     }
     if (typeof data.rulesChannel !== 'undefined') {
-      _data.rules_channel_id = this.client.channels.resolveID(data.rulesChannel);
+      _data.rules_channel_id = this.client.channels.resolveId(data.rulesChannel);
     }
     if (typeof data.publicUpdatesChannel !== 'undefined') {
-      _data.public_updates_channel_id = this.client.channels.resolveID(data.publicUpdatesChannel);
+      _data.public_updates_channel_id = this.client.channels.resolveId(data.publicUpdatesChannel);
     }
     if (typeof data.features !== 'undefined') {
       _data.features = data.features;
@@ -927,6 +865,60 @@ class Guild extends BaseGuild {
   }
 
   /**
+   * Welcome channel data
+   * @typedef {Object} WelcomeChannelData
+   * @property {string} description The description to show for this welcome channel
+   * @property {GuildTextChannelResolvable} channel The channel to link for this welcome channel
+   * @property {EmojiIdentifierResolvable} [emoji] The emoji to display for this welcome channel
+   */
+
+  /**
+   * Welcome screen edit data
+   * @typedef {Object} WelcomeScreenEditData
+   * @property {boolean} [enabled] Whether the welcome screen is enabled
+   * @property {string} [description] The description for the welcome screen
+   * @property {WelcomeChannelData[]} [welcomeChannels] The welcome channel data for the welcome screen
+   */
+
+  /**
+   * Updates the guild's welcome screen
+   * @param {WelcomeScreenEditData} data Data to edit the welcome screen with
+   * @returns {Promise<WelcomeScreen>}
+   * @example
+   * guild.editWelcomeScreen({
+   *   description: 'Hello World',
+   *   enabled: true,
+   *   welcomeChannels: [
+   *     {
+   *       description: 'foobar',
+   *       channel: '222197033908436994',
+   *     }
+   *   ],
+   * })
+   */
+  async editWelcomeScreen(data) {
+    const { enabled, description, welcomeChannels } = data;
+    const welcome_channels = welcomeChannels?.map(welcomeChannelData => {
+      const emoji = this.emojis.resolve(welcomeChannelData.emoji);
+      return {
+        emoji_id: emoji && emoji.id,
+        emoji_name: emoji?.name ?? welcomeChannelData.emoji,
+        channel_id: this.channels.resolveId(welcomeChannelData.channel),
+        description: welcomeChannelData.description,
+      };
+    });
+
+    const patchData = await this.client.api.guilds(this.id, 'welcome-screen').patch({
+      data: {
+        welcome_channels,
+        description,
+        enabled,
+      },
+    });
+    return new WelcomeScreen(this, patchData);
+  }
+
+  /**
    * Edits the level of the explicit content filter.
    * @param {ExplicitContentFilterLevel|number} explicitContentFilter The new level of the explicit content filter
    * @param {string} [reason] Reason for changing the level of the guild's explicit content filter
@@ -939,7 +931,7 @@ class Guild extends BaseGuild {
   /* eslint-disable max-len */
   /**
    * Edits the setting of the default message notifications of the guild.
-   * @param {DefaultMessageNotifications|number} defaultMessageNotifications The new setting for the default message notifications
+   * @param {DefaultMessageNotificationLevel|number} defaultMessageNotifications The new default message notification level of the guild
    * @param {string} [reason] Reason for changing the setting of the default message notifications
    * @returns {Promise<Guild>}
    */
@@ -971,21 +963,6 @@ class Guild extends BaseGuild {
    */
   setName(name, reason) {
     return this.edit({ name }, reason);
-  }
-
-  /**
-   * Edits the region of the guild.
-   * @param {string} region The new region of the guild
-   * @param {string} [reason] Reason for changing the guild's region
-   * @returns {Promise<Guild>}
-   * @example
-   * // Edit the guild region
-   * guild.setRegion('london')
-   *  .then(updated => console.log(`Updated guild region to ${updated.region}`))
-   *  .catch(console.error);
-   */
-  setRegion(region, reason) {
-    return this.edit({ region }, reason);
   }
 
   /**
@@ -1189,16 +1166,16 @@ class Guild extends BaseGuild {
    * @param {ChannelPosition[]} channelPositions Channel positions to update
    * @returns {Promise<Guild>}
    * @example
-   * guild.setChannelPositions([{ channel: channelID, position: newChannelIndex }])
+   * guild.setChannelPositions([{ channel: channelId, position: newChannelIndex }])
    *   .then(guild => console.log(`Updated channel positions for ${guild}`))
    *   .catch(console.error);
    */
   setChannelPositions(channelPositions) {
     const updatedChannels = channelPositions.map(r => ({
-      id: this.client.channels.resolveID(r.channel),
+      id: this.client.channels.resolveId(r.channel),
       position: r.position,
       lock_permissions: r.lockPermissions,
-      parent_id: this.channels.resolveID(r.parent),
+      parent_id: typeof r.parent !== 'undefined' ? this.channels.resolveId(r.parent) : undefined,
     }));
 
     return this.client.api
@@ -1216,7 +1193,7 @@ class Guild extends BaseGuild {
   /**
    * The data needed for updating a guild role's position
    * @typedef {Object} GuildRolePosition
-   * @property {RoleResolveable} role The ID of the role
+   * @property {RoleResolveable} role The role's id
    * @property {number} position The position to update
    */
 
@@ -1225,14 +1202,14 @@ class Guild extends BaseGuild {
    * @param {GuildRolePosition[]} rolePositions Role positions to update
    * @returns {Promise<Guild>}
    * @example
-   * guild.setRolePositions([{ role: roleID, position: updatedRoleIndex }])
+   * guild.setRolePositions([{ role: roleId, position: updatedRoleIndex }])
    *  .then(guild => console.log(`Role positions updated for ${guild}`))
    *  .catch(console.error);
    */
   setRolePositions(rolePositions) {
     // Make sure rolePositions are prepared for API
     rolePositions = rolePositions.map(o => ({
-      id: this.roles.resolveID(o.role),
+      id: this.roles.resolveId(o.role),
       position: o.position,
     }));
 
@@ -1263,7 +1240,7 @@ class Guild extends BaseGuild {
       .widget.patch({
         data: {
           enabled: widget.enabled,
-          channel_id: this.channels.resolveID(widget.channel),
+          channel_id: this.channels.resolveId(widget.channel),
         },
         reason,
       })
@@ -1280,7 +1257,7 @@ class Guild extends BaseGuild {
    *   .catch(console.error);
    */
   leave() {
-    if (this.ownerID === this.client.user.id) return Promise.reject(new Error('GUILD_OWNED'));
+    if (this.ownerId === this.client.user.id) return Promise.reject(new Error('GUILD_OWNED'));
     return this.client.api
       .users('@me')
       .guilds(this.id)
@@ -1319,12 +1296,11 @@ class Guild extends BaseGuild {
       this.available === guild.available &&
       this.splash === guild.splash &&
       this.discoverySplash === guild.discoverySplash &&
-      this.region === guild.region &&
       this.name === guild.name &&
       this.memberCount === guild.memberCount &&
       this.large === guild.large &&
       this.icon === guild.icon &&
-      this.ownerID === guild.ownerID &&
+      this.ownerId === guild.ownerId &&
       this.verificationLevel === guild.verificationLevel &&
       (this.features === guild.features ||
         (this.features.length === guild.features.length &&
@@ -1377,7 +1353,7 @@ class Guild extends BaseGuild {
   }
 
   /**
-   * Creates a collection of this guild's roles, sorted by their position and IDs.
+   * Creates a collection of this guild's roles, sorted by their position and ids.
    * @returns {Collection<Snowflake, Role>}
    * @private
    */
@@ -1386,7 +1362,7 @@ class Guild extends BaseGuild {
   }
 
   /**
-   * Creates a collection of this guild's or a specific category's channels, sorted by their position and IDs.
+   * Creates a collection of this guild's or a specific category's channels, sorted by their position and ids.
    * @param {GuildChannel} [channel] Category to get the channels of
    * @returns {Collection<Snowflake, GuildChannel>}
    * @private
@@ -1406,3 +1382,8 @@ class Guild extends BaseGuild {
 }
 
 module.exports = Guild;
+
+/**
+ * @external APIGuild
+ * @see {@link https://discord.com/developers/docs/resources/guild#guild-object}
+ */

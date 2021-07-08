@@ -29,7 +29,7 @@ class TeamMember extends Base {
 
     /**
      * The permissions this Team Member has with regard to the team
-     * @type {MembershipStates}
+     * @type {MembershipState}
      */
     this.membershipState = MembershipStates[data.membership_state];
 
@@ -41,7 +41,7 @@ class TeamMember extends Base {
   }
 
   /**
-   * The ID of the Team Member
+   * The Team Member's id
    * @type {Snowflake}
    * @readonly
    */

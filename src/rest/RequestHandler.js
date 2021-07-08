@@ -5,7 +5,7 @@ const DiscordAPIError = require('./DiscordAPIError');
 const HTTPError = require('./HTTPError');
 const RateLimitError = require('./RateLimitError');
 const {
-  Events: { RATE_LIMIT, INVALID_REQUEST_WARNING },
+  Events: { DEBUG, RATE_LIMIT, INVALID_REQUEST_WARNING },
 } = require('../util/Constants');
 const Util = require('../util/Util');
 
@@ -125,13 +125,7 @@ class RequestHandler {
         /**
          * Emitted when the client hits a rate limit while making a request
          * @event Client#rateLimit
-         * @param {Object} rateLimitInfo Object containing the rate limit info
-         * @param {number} rateLimitInfo.timeout Timeout in ms
-         * @param {number} rateLimitInfo.limit Number of requests that can be made to this endpoint
-         * @param {string} rateLimitInfo.method HTTP method used for request that triggered this event
-         * @param {string} rateLimitInfo.path Path used for request that triggered this event
-         * @param {string} rateLimitInfo.route Route used for request that triggered this event
-         * @param {boolean} rateLimitInfo.global Whether the rate limit that was reached was the global limit
+         * @param {RateLimitData} rateLimitData Object containing the rate limit info
          */
         this.manager.client.emit(RATE_LIMIT, {
           timeout,
@@ -232,11 +226,16 @@ class RequestHandler {
         invalidCount % this.manager.client.options.invalidRequestWarningInterval === 0;
       if (emitInvalid) {
         /**
-         * Emitted periodically when the process sends invalid messages to let users avoid the
+         * @typedef {Object} InvalidRequestWarningData
+         * @property {number} count Number of invalid requests that have been made in the window
+         * @property {number} remainingTime Time in ms remaining before the count resets
+         */
+
+        /**
+         * Emitted periodically when the process sends invalid requests to let users avoid the
          * 10k invalid requests in 10 minutes threshold that causes a ban
          * @event Client#invalidRequestWarning
-         * @param {number} invalidRequestWarningInfo.count Number of invalid requests that have been made in the window
-         * @param {number} invalidRequestWarningInfo.remainingTime Time in ms remaining before the count resets
+         * @param {InvalidRequestWarningData} invalidRequestWarningData Object containing the invalid request info
          */
         this.manager.client.emit(INVALID_REQUEST_WARNING, {
           count: invalidCount,
@@ -255,9 +254,6 @@ class RequestHandler {
     if (res.status >= 400 && res.status < 500) {
       // Handle ratelimited requests
       if (res.status === 429) {
-        // A ratelimit was hit - this should never happen
-        this.manager.client.emit('debug', `429 hit on route ${request.route}${sublimitTimeout ? ' for sublimit' : ''}`);
-
         const isGlobal = this.globalLimited;
         let limit, timeout;
         if (isGlobal) {
@@ -269,6 +265,19 @@ class RequestHandler {
           limit = this.limit;
           timeout = this.reset + this.manager.client.options.restTimeOffset - Date.now();
         }
+
+        this.manager.client.emit(
+          DEBUG,
+          `Hit a 429 while executing a request.
+    Global  : ${isGlobal}
+    Method  : ${request.method}
+    Path    : ${request.path}
+    Route   : ${request.route}
+    Limit   : ${limit}
+    Timeout : ${timeout}ms
+    Sublimit: ${sublimitTimeout ? `${sublimitTimeout}ms` : 'None'}`,
+        );
+
         await this.onRateLimit(request, limit, timeout, isGlobal);
 
         // If caused by a sublimit, wait it out here so other requests on the route can be handled

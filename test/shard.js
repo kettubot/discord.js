@@ -9,7 +9,7 @@ const client = new Client({
   shardCount: process.argv[3],
 });
 
-client.on('message', msg => {
+client.on('messageCreate', msg => {
   if (msg.content.startsWith('?eval') && msg.author.id === '66564597481480192') {
     try {
       const com = eval(msg.content.split(' ').slice(1).join(' '));
