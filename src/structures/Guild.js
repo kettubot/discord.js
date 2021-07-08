@@ -120,7 +120,7 @@ class Guild extends AnonymousGuild {
      * The id of the shard this Guild belongs to.
      * @type {number}
      */
-    this.shardID = data.shardID;
+    this.shardId = data.shardId;
 
     if (this.client.options.kettu) {
       /**
