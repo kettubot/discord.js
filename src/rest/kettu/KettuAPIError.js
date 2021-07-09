@@ -5,7 +5,7 @@
  * @extends Error
  */
 class KettuAPIError extends Error {
-  constructor(path, error, method, status) {
+  constructor(error, status, request) {
     super();
     const flattened = this.constructor.flattenErrors(error.errors || error).join('\n');
     this.name = 'KettuAPIError';
@@ -15,13 +15,13 @@ class KettuAPIError extends Error {
      * The HTTP method used for the request
      * @type {string}
      */
-    this.method = method;
+    this.method = request.method;
 
     /**
      * The path of the request relative to the HTTP endpoint
      * @type {string}
      */
-    this.path = path;
+    this.path = request.path;
 
     /**
      * HTTP error code returned by kAPI
@@ -34,6 +34,15 @@ class KettuAPIError extends Error {
      * @type {number}
      */
     this.httpStatus = status;
+
+    /**
+     * The data associated with the request that caused this error
+     * @type {HTTPErrorData}
+     */
+    this.requestData = {
+      json: request.options.data,
+      files: request.options.files ?? [],
+    };
   }
 
   /**
@@ -43,7 +52,7 @@ class KettuAPIError extends Error {
    * @private
    */
   static flattenErrors(arr) {
-    return arr.map(err => `${err.path.join('.')} ${err.message}`);
+    return arr?.map(err => `${err.path.join('.')}: ${err.message}`);
   }
 }
 

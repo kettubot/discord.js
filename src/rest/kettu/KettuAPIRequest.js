@@ -34,7 +34,8 @@ class KettuAPIRequest {
     let headers = {};
 
     if (this.options.auth !== false) headers.Authorization = this.rest.getAuth();
-    if (this.options.reason) headers['X-Audit-Log-Reason'] = encodeURIComponent(this.options.reason);
+    if (this.options.reason) headers['X-Reason'] = encodeURIComponent(this.options.reason);
+    if (this.options.simulate) headers['X-Simulating'] = this.options.simulate;
     headers['User-Agent'] = KettuUserAgent;
     if (this.options.headers) headers = Object.assign(headers, this.options.headers);
 

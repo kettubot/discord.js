@@ -1,8 +1,8 @@
 'use strict';
 
+const KettuAPIError = require('./KettuAPIError');
 const KettuAPIRequest = require('./KettuAPIRequest');
 const routeBuilder = require('./KettuAPIRouter');
-const DiscordAPIError = require('../DiscordAPIError');
 const HTTPError = require('../HTTPError');
 
 function parseResponse(res) {
@@ -36,7 +36,7 @@ class KettuRESTManager {
       res = await request.make();
     } catch (error) {
       // Retry the specified number of times for request abortions
-      throw new HTTPError(error.message, error.constructor.name, error.status, request.method, request.path);
+      throw new HTTPError(error.message, error.constructor.name, error.status, request);
     }
 
     // Handle 2xx and 3xx responses
@@ -52,16 +52,16 @@ class KettuRESTManager {
       try {
         data = await parseResponse(res);
       } catch (err) {
-        throw new HTTPError(err.message, err.constructor.name, err.status, request.method, request.path);
+        throw new HTTPError(err.message, err.constructor.name, err.status, request);
       }
 
-      throw new DiscordAPIError(data, res.status, request);
+      throw new KettuAPIError(data, res.status, request);
     }
 
     // Handle 5xx responses
     if (res.status >= 500 && res.status < 600) {
       // Retry the specified number of times for possible serverside issues
-      throw new HTTPError(res.statusText, res.constructor.name, res.status, request.method, request.path);
+      throw new HTTPError(res.statusText, res.constructor.name, res.status, request);
     }
 
     // Fallback in the rare case a status code outside the range 200..=599 is returned
