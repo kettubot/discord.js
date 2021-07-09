@@ -1,5 +1,16 @@
 # Changelog
 
+## 13.0.0-alpha.23
+
+Sync with discord.js#master as of release.
+
+*Warning: discord.js introduced a few significant breaking changes in this version, make sure to check the v13 updating guide.*
+
+- `KettuGuildConfig` instructors were refactored to make more sense
+- `KettuGuild#nextCaseNumber` now shows the approximate next case number
+- `KettuGuild#cases` provides access to `KettuGuildCaseManager` and `KettuGuildCase`s
+- Kettu's REST components were refactored to match recent changes in discod.js
+
 ## 13.0.0-alpha.22
 
 - `KettuClient` now supports the sharding system
