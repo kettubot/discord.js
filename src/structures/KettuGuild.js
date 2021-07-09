@@ -2,6 +2,7 @@
 
 const Base = require('./Base');
 const KettuGuildConfig = require('./KettuGuildConfig');
+const KettuGuildCaseManager = require('../managers/KettuGuildCaseManager');
 
 /**
  * Interfaces with the kAPI for a specific guild.
@@ -33,6 +34,12 @@ class KettuGuild extends Base {
      * @type {KettuGuildConfig}
      */
     this.config = new KettuGuildConfig(this.client, this.guild, {});
+
+    /**
+     * Kettu's cases for the guild
+     * @type {KettuGuildCaseManager}
+     */
+    this.cases = new KettuGuildCaseManager(this.guild);
 
     if (!data) return;
 
